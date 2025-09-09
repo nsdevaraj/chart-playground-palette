@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,39 +18,95 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const defaultHTML = `<!DOCTYPE html>
+// Template definitions for different chart libraries
+const templates = {
+  1: { // Highcharts
+    name: "Highcharts Line Chart",
+    html: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chart Visualization</title>
+    <title>Highcharts Visualization</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+</head>
+<body>
+    <div id="chart" style="width: 100%; height: 400px;"></div>
+</body>
+</html>`,
+    css: `body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+#chart {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}`,
+    js: `// Highcharts Line Chart
+Highcharts.chart('chart', {
+    chart: {
+        type: 'line'
+    },
+    title: {
+        text: 'Monthly Sales Data'
+    },
+    xAxis: {
+        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+    },
+    yAxis: {
+        title: {
+            text: 'Sales ($)'
+        }
+    },
+    series: [{
+        name: 'Sales',
+        data: [1000, 1200, 800, 1500, 2000, 1800],
+        color: '#8b5cf6'
+    }],
+    credits: {
+        enabled: false
+    }
+});`
+  },
+  2: { // ECharts
+    name: "ECharts Bar Chart",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECharts Visualization</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
     <div id="chart" style="width: 100%; height: 400px;"></div>
 </body>
-</html>`;
-
-const defaultCSS = `body {
+</html>`,
+    css: `body {
     margin: 0;
     padding: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
 }
 
 #chart {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}`;
-
-const defaultJS = `// ECharts Bar Chart Example
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}`,
+    js: `// ECharts Bar Chart
 const chartDom = document.getElementById('chart');
 const myChart = echarts.init(chartDom);
 
 const option = {
     title: {
-        text: 'Sample Bar Chart',
+        text: 'Weekly Performance',
         textStyle: {
             fontSize: 20,
             fontWeight: 'bold'
@@ -70,8 +127,8 @@ const option = {
         type: 'bar',
         itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#667eea' },
-                { offset: 1, color: '#764ba2' }
+                { offset: 0, color: '#8b5cf6' },
+                { offset: 1, color: '#06b6d4' }
             ])
         }
     }]
@@ -79,26 +136,174 @@ const option = {
 
 myChart.setOption(option);
 
-// Resize chart on window resize
 window.addEventListener('resize', () => {
     myChart.resize();
-});`;
+});`
+  },
+  3: { // AG-Grid
+    name: "AG-Grid Data Table",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AG-Grid Visualization</title>
+    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
+</head>
+<body>
+    <div id="myGrid" class="ag-theme-alpine" style="height: 400px; width: 100%;"></div>
+</body>
+</html>`,
+    css: `body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+#myGrid {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+}`,
+    js: `// AG-Grid Data Table
+const columnDefs = [
+    { field: 'name', headerName: 'Product Name', sortable: true, filter: true },
+    { field: 'price', headerName: 'Price', sortable: true, filter: true, valueFormatter: params => '$' + params.value },
+    { field: 'category', headerName: 'Category', sortable: true, filter: true },
+    { field: 'stock', headerName: 'Stock', sortable: true, filter: true }
+];
+
+const rowData = [
+    { name: 'iPhone 13', price: 799, category: 'Electronics', stock: 25 },
+    { name: 'MacBook Pro', price: 1299, category: 'Electronics', stock: 10 },
+    { name: 'AirPods', price: 179, category: 'Electronics', stock: 50 },
+    { name: 'iPad Air', price: 599, category: 'Electronics', stock: 30 },
+    { name: 'Apple Watch', price: 399, category: 'Electronics', stock: 20 }
+];
+
+const gridOptions = {
+    columnDefs: columnDefs,
+    rowData: rowData,
+    pagination: true,
+    paginationPageSize: 10
+};
+
+const eGridDiv = document.querySelector('#myGrid');
+new agGrid.Grid(eGridDiv, gridOptions);`
+  },
+  4: { // D3.js
+    name: "D3.js Interactive Chart",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div id="chart"></div>
+</body>
+</html>`,
+    css: `body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+#chart {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+}
+
+.bar {
+    transition: all 0.3s ease;
+}
+
+.bar:hover {
+    opacity: 0.8;
+}`,
+    js: `// D3.js Interactive Bar Chart
+const data = [
+    { name: 'A', value: 30 },
+    { name: 'B', value: 80 },
+    { name: 'C', value: 45 },
+    { name: 'D', value: 60 },
+    { name: 'E', value: 20 },
+    { name: 'F', value: 90 }
+];
+
+const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+const width = 460 - margin.left - margin.right;
+const height = 300 - margin.bottom - margin.top;
+
+const svg = d3.select("#chart")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+const x = d3.scaleBand()
+    .range([0, width])
+    .domain(data.map(d => d.name))
+    .padding(0.2);
+
+const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.value)])
+    .range([height, 0]);
+
+svg.selectAll("mybar")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("class", "bar")
+    .attr("x", d => x(d.name))
+    .attr("y", d => y(d.value))
+    .attr("width", x.bandwidth())
+    .attr("height", d => height - y(d.value))
+    .attr("fill", "#8b5cf6");
+
+svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+svg.append("g")
+    .call(d3.axisLeft(y));`
+  }
+};
+
+const defaultTemplate = templates[2]; // Default to ECharts
 
 const Editor = () => {
-  const [html, setHtml] = useState(defaultHTML);
-  const [css, setCss] = useState(defaultCSS);
-  const [js, setJs] = useState(defaultJS);
+  const [searchParams] = useSearchParams();
+  const [html, setHtml] = useState(defaultTemplate.html);
+  const [css, setCss] = useState(defaultTemplate.css);
+  const [js, setJs] = useState(defaultTemplate.js);
   const [activeTab, setActiveTab] = useState("html");
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [previewCode, setPreviewCode] = useState("");
+
+  // Load template based on URL parameter
+  useEffect(() => {
+    const templateId = searchParams.get('template');
+    if (templateId && templates[templateId]) {
+      const template = templates[templateId];
+      setHtml(template.html);
+      setCss(template.css);
+      setJs(template.js);
+      toast.success(`Loaded ${template.name} template!`);
+    }
+  }, [searchParams]);
 
   const runCode = () => {
-    if (!iframeRef.current) return;
-
-    const iframe = iframeRef.current;
-    const document = iframe.contentDocument || iframe.contentWindow?.document;
-    
-    if (!document) return;
-
     const fullCode = html.replace(
       '</head>',
       `<style>${css}</style></head>`
@@ -107,12 +312,21 @@ const Editor = () => {
       `<script>${js}</script></body>`
     );
 
-    document.open();
-    document.write(fullCode);
-    document.close();
-
+    setPreviewCode(fullCode);
     toast.success("Code executed successfully!");
   };
+
+  // Auto-update preview when code changes
+  useEffect(() => {
+    const fullCode = html.replace(
+      '</head>',
+      `<style>${css}</style></head>`
+    ).replace(
+      '</body>',
+      `<script>${js}</script></body>`
+    );
+    setPreviewCode(fullCode);
+  }, [html, css, js]);
 
   const copyIframeCode = () => {
     const fullCode = html.replace(
@@ -158,17 +372,16 @@ const Editor = () => {
   };
 
   const resetCode = () => {
-    setHtml(defaultHTML);
-    setCss(defaultCSS);
-    setJs(defaultJS);
-    toast.success("Code reset to default template!");
+    const templateId = searchParams.get('template');
+    const template = (templateId && templates[templateId]) 
+      ? templates[templateId] 
+      : defaultTemplate;
+    
+    setHtml(template.html);
+    setCss(template.css);
+    setJs(template.js);
+    toast.success("Code reset to template!");
   };
-
-  useEffect(() => {
-    // Auto-run code on component mount
-    const timer = setTimeout(runCode, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const getCurrentCode = () => {
     switch (activeTab) {
@@ -274,8 +487,9 @@ const Editor = () => {
                 <iframe
                   ref={iframeRef}
                   className="w-full h-full"
-                  sandbox="allow-scripts"
+                  sandbox="allow-scripts allow-same-origin"
                   title="Chart Preview"
+                  srcDoc={previewCode}
                 />
               </div>
             </CardContent>
