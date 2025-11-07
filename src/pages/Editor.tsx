@@ -28,7 +28,7 @@ const templates = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Highcharts Visualization</title>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="/libs/highcharts/highcharts.js"></script>
 </head>
 <body>
     <div id="chart" style="width: 100%; height: 400px;"></div>
@@ -81,7 +81,7 @@ Highcharts.chart('chart', {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ECharts Visualization</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="/libs/echarts/echarts.min.js"></script>
 </head>
 <body>
     <div id="chart" style="width: 100%; height: 400px;"></div>
@@ -148,9 +148,9 @@ window.addEventListener('resize', () => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AG-Grid Visualization</title>
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/dist/ag-grid-community.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-grid.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-theme-alpine.css">
+    <script src="/libs/ag-grid/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="/libs/ag-grid/ag-grid.css">
+    <link rel="stylesheet" href="/libs/ag-grid/ag-theme-alpine.css">
 </head>
 <body>
     <div id="myGrid" class="ag-theme-alpine" style="height: 400px; width: 100%;"></div>
@@ -205,7 +205,7 @@ new agGrid.Grid(eGridDiv, gridOptions);`
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>D3.js Visualization</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/libs/d3/d3.v7.min.js"></script>
 </head>
 <body>
     <div id="chart"></div>
@@ -289,7 +289,7 @@ svg.append("g")
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Dashboard</title>
-    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="/libs/highcharts/highstock.js"></script>
 </head>
 <body>
     <div id="chart" style="width: 100%; height: 400px;"></div>
@@ -344,7 +344,7 @@ Highcharts.stockChart('chart', {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ECharts Geo Heatmap</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="/libs/echarts/echarts.min.js"></script>
 </head>
 <body>
     <div id="chart" style="width: 100%; height: 500px;"></div>
@@ -390,7 +390,7 @@ const data = [
 ];
 
 // Fetch and register world map
-fetch('https://raw.githubusercontent.com/apache/echarts/5.4.3/test/data/map/json/world.json')
+fetch('/libs/echarts/data/world.json')
     .then(response => response.json())
     .then(worldJson => {
         echarts.registerMap('world', worldJson);
