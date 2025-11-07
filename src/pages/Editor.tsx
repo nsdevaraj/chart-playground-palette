@@ -361,7 +361,7 @@ Highcharts.stockChart('chart', {
     background: white;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
-    border: 1px solid rgba(255, 255, 5, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }`,
     js: `// ECharts Geographic Heatmap
 const chartDom = document.getElementById('chart');
@@ -466,14 +466,27 @@ const defaultTemplate = templates[2]; // Default to ECharts
 
 const Editor = () => {
   const [searchParams] = useSearchParams();
-  const [html, setHtml] = useState(defaultTemplate.html);
-  const [css, setCss] = useState(defaultTemplate.css);
-  const [js, setJs] = useState(defaultTemplate.js);
+  
+  // Initialize with template from URL or default
+  const initialTemplate = (() => {
+    const templateId = searchParams.get('template');
+    return (templateId && templates[templateId]) ? templates[templateId] : defaultTemplate;
+  })();
+  
+  const [html, setHtml] = useState(initialTemplate.html);
+  const [css, setCss] = useState(initialTemplate.css);
+  const [js, setJs] = useState(initialTemplate.js);
   const [activeTab, setActiveTab] = useState("html");
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [previewCode, setPreviewCode] = useState("");
+  const [previewCode, setPreviewCode] = useState(() => {
+    // Initialize with the full code
+    return initialTemplate.html
+      .replace('</head>', () => `<style>${initialTemplate.css}</style></head>`)
+      .replace('</body>', () => `<script>${initialTemplate.js}<\/script></body>`);
+  });
+  const [iframeKey, setIframeKey] = useState(0);
 
-  // Load template based on URL parameter
+  // Load template when URL parameter changes
   useEffect(() => {
     const templateId = searchParams.get('template');
     if (templateId && templates[templateId]) {
@@ -481,6 +494,7 @@ const Editor = () => {
       setHtml(template.html);
       setCss(template.css);
       setJs(template.js);
+      setIframeKey(prev => prev + 1); // Force iframe remount
       toast.success(`Loaded ${template.name} template!`);
     }
   }, [searchParams]);
@@ -547,6 +561,7 @@ const Editor = () => {
     setHtml(template.html);
     setCss(template.css);
     setJs(template.js);
+    setIframeKey(prev => prev + 1); // Force iframe remount
     toast.success("Code reset to template!");
   };
 
@@ -652,6 +667,7 @@ const Editor = () => {
             <CardContent className="flex-1">
               <div className="w-full h-full border border-border rounded-lg overflow-hidden bg-white">
                 <iframe
+                  key={iframeKey}
                   ref={iframeRef}
                   className="w-full h-full"
                   sandbox="allow-scripts allow-same-origin"
