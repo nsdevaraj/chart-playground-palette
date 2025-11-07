@@ -6,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Code2, ExternalLink, Search, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { DenebTemplate } from "@/lib/deneb/types";
+import type { MermaidTemplate } from "@/lib/mermaid/types";
 import { denebTemplates } from "@/data/denebTemplates";
+import { mermaidTemplates } from "@/data/mermaidTemplates";
 import { createTemplatePreviewHTML, generateIFrameHTML } from "@/lib/deneb/renderer";
+import { generateMermaidIFrameHTML } from "@/lib/mermaid/renderer";
 
 type SampleRecord = Record<string, unknown>;
 
@@ -19,8 +22,9 @@ interface Template {
   category: string;
   tags: string[];
   preview?: string;
-  type: "code" | "deneb";
+  type: "code" | "deneb" | "mermaid";
   denebTemplate?: DenebTemplate;
+  mermaidTemplate?: MermaidTemplate;
   sampleData?: SampleRecord[];
 }
 
@@ -101,12 +105,38 @@ const denebTemplateCards: Template[] = denebTemplates.map((entry) => ({
   sampleData: entry.sampleData,
 }));
 
-const templates: Template[] = [...baseTemplates, ...denebTemplateCards];
+const mermaidTemplateCards: Template[] = mermaidTemplates.map((entry) => ({
+  id: entry.id,
+  title: entry.title,
+  description: entry.description,
+  library: "Mermaid",
+  category: entry.category,
+  tags: entry.tags,
+  type: "mermaid",
+  mermaidTemplate: entry.template,
+}));
+
+const templates: Template[] = [...baseTemplates, ...denebTemplateCards, ...mermaidTemplateCards];
 
 const libraries = ["All", ...Array.from(new Set(templates.map((template) => template.library)))];
 
 const DenebPreview: React.FC<{ template: DenebTemplate; data?: SampleRecord[] }> = ({ template, data }) => {
   const previewHtml = useMemo(() => generateIFrameHTML(template, data), [template, data]);
+
+  return (
+    <div className="w-full h-40 border border-border rounded-lg overflow-hidden bg-muted/40">
+      <iframe
+        title={`${template.name} preview`}
+        srcDoc={previewHtml}
+        sandbox="allow-scripts allow-same-origin"
+        className="w-full h-full bg-white"
+      />
+    </div>
+  );
+};
+
+const MermaidPreview: React.FC<{ template: MermaidTemplate }> = ({ template }) => {
+  const previewHtml = useMemo(() => generateMermaidIFrameHTML(template), [template]);
 
   return (
     <div className="w-full h-40 border border-border rounded-lg overflow-hidden bg-muted/40">
@@ -142,15 +172,57 @@ const Gallery = () => {
   }, [searchTerm, selectedLibrary]);
 
   const handlePreviewClick = useCallback((template: Template) => {
-    if (template.type !== "deneb" || !template.denebTemplate) {
-      return;
-    }
-
     if (typeof window === "undefined") {
       return;
     }
 
-    const previewHtml = createTemplatePreviewHTML(template.denebTemplate, template.sampleData);
+    let previewHtml: string;
+
+    if (template.type === "deneb" && template.denebTemplate) {
+      previewHtml = createTemplatePreviewHTML(template.denebTemplate, template.sampleData);
+    } else if (template.type === "mermaid" && template.mermaidTemplate) {
+      previewHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${template.mermaidTemplate.name}</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 90%;
+        }
+        .mermaid { display: flex; justify-content: center; }
+        svg { max-width: 100%; height: auto; }
+    </style>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    <\/script>
+</head>
+<body>
+    <div class="container">
+        <div class="mermaid">${template.mermaidTemplate.diagram}</div>
+    </div>
+</body>
+</html>`;
+    } else {
+      return;
+    }
+
     const blob = new Blob([previewHtml], { type: "text/html" });
     const url = URL.createObjectURL(blob);
 
@@ -228,6 +300,8 @@ const Gallery = () => {
 
               {template.type === "deneb" && template.denebTemplate ? (
                 <DenebPreview template={template.denebTemplate} data={template.sampleData} />
+              ) : template.type === "mermaid" && template.mermaidTemplate ? (
+                <MermaidPreview template={template.mermaidTemplate} />
               ) : (
                 <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center mb-2">
                   <Zap className="w-8 h-8 text-muted-foreground animate-float" />
@@ -240,6 +314,8 @@ const Gallery = () => {
                 to={
                   template.type === "deneb"
                     ? `/editor?template=${template.id}&type=deneb`
+                    : template.type === "mermaid"
+                    ? `/editor?template=${template.id}&type=mermaid`
                     : `/editor?template=${template.id}`
                 }
                 className="flex-1"
@@ -254,11 +330,13 @@ const Gallery = () => {
                 size="icon"
                 type="button"
                 onClick={() => handlePreviewClick(template)}
-                disabled={template.type !== "deneb"}
+                disabled={template.type !== "deneb" && template.type !== "mermaid"}
                 title={
                   template.type === "deneb"
                     ? "Open interactive Deneb preview"
-                    : "Preview available for Deneb templates"
+                    : template.type === "mermaid"
+                    ? "Open interactive Mermaid preview"
+                    : "Preview available for Deneb and Mermaid templates"
                 }
               >
                 <ExternalLink className="w-4 h-4" />
