@@ -148,9 +148,9 @@ window.addEventListener('resize', () => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AG-Grid Visualization</title>
-    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
-    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/dist/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-theme-alpine.css">
 </head>
 <body>
     <div id="myGrid" class="ag-theme-alpine" style="height: 400px; width: 100%;"></div>
@@ -171,7 +171,7 @@ window.addEventListener('resize', () => {
     js: `// AG-Grid Data Table
 const columnDefs = [
     { field: 'name', headerName: 'Product Name', sortable: true, filter: true },
-    { field: 'price', headerName: 'Price', sortable: true, filter: true, valueFormatter: params => '$' + params.value },
+    { field: 'price', headerName: 'Price', sortable: true, filter: true, valueFormatter: function(params) { return '$' + params.value; } },
     { field: 'category', headerName: 'Category', sortable: true, filter: true },
     { field: 'stock', headerName: 'Stock', sortable: true, filter: true }
 ];
@@ -181,14 +181,17 @@ const rowData = [
     { name: 'MacBook Pro', price: 1299, category: 'Electronics', stock: 10 },
     { name: 'AirPods', price: 179, category: 'Electronics', stock: 50 },
     { name: 'iPad Air', price: 599, category: 'Electronics', stock: 30 },
-    { name: 'Apple Watch', price: 399, category: 'Electronics', stock: 20 }
+    { name: 'Apple Watch', price: 399, category: 'Electronics', stock: 20 },
+    { name: 'Samsung Galaxy', price: 899, category: 'Electronics', stock: 15 },
+    { name: 'Dell XPS', price: 1499, category: 'Electronics', stock: 8 },
+    { name: 'Sony Headphones', price: 249, category: 'Electronics', stock: 35 }
 ];
 
 const gridOptions = {
     columnDefs: columnDefs,
     rowData: rowData,
     pagination: true,
-    paginationPageSize: 10
+    paginationPageSize: 5
 };
 
 const eGridDiv = document.querySelector('#myGrid');
@@ -244,7 +247,7 @@ const margin = { top: 20, right: 30, bottom: 40, left: 40 };
 const width = 460 - margin.left - margin.right;
 const height = 300 - margin.bottom - margin.top;
 
-const svg = d3.select("#chart")
+const svg = d3.select('#chart')
     .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -277,6 +280,185 @@ svg.append("g")
 
 svg.append("g")
     .call(d3.axisLeft(y));`
+  },
+  5: { // Highcharts Financial Dashboard
+    name: "Highcharts Financial Dashboard",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Dashboard</title>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+</head>
+<body>
+    <div id="chart" style="width: 100%; height: 400px;"></div>
+</body>
+</html>`,
+    css: `body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+#chart {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}`,
+    js: `// Highcharts Financial Candlestick Chart
+const data = [
+    [Date.UTC(2024, 0, 1), 100, 110, 95, 105],
+    [Date.UTC(2024, 0, 2), 105, 115, 100, 110],
+    [Date.UTC(2024, 0, 3), 110, 120, 105, 115],
+    [Date.UTC(2024, 0, 4), 115, 118, 108, 112],
+    [Date.UTC(2024, 0, 5), 112, 125, 110, 120]
+];
+
+Highcharts.stockChart('chart', {
+    rangeSelector: {
+        selected: 1
+    },
+    title: {
+        text: 'Stock Price Performance'
+    },
+    series: [{
+        type: 'candlestick',
+        name: 'Stock Price',
+        data: data,
+        color: '#ef4444',
+        upColor: '#22c55e'
+    }],
+    credits: {
+        enabled: false
+    }
+});`
+  },
+  6: { // ECharts Geo Heatmap
+    name: "ECharts Geo Heatmap",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECharts Geo Heatmap</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div id="chart" style="width: 100%; height: 500px;"></div>
+</body>
+</html>`,
+    css: `body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+#chart {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 5, 0.1);
+}`,
+    js: `// ECharts Geographic Heatmap
+const chartDom = document.getElementById('chart');
+const myChart = echarts.init(chartDom);
+
+// Sample data for countries
+const data = [
+    { name: 'United States', value: 2890 },
+    { name: 'Brazil', value: 1350 },
+    { name: 'China', value: 5650 },
+    { name: 'India', value: 3200 },
+    { name: 'Russia', value: 1890 },
+    { name: 'Canada', value: 780 },
+    { name: 'Australia', value: 920 },
+    { name: 'Germany', value: 1560 },
+    { name: 'France', value: 1240 },
+    { name: 'United Kingdom', value: 1100 },
+    { name: 'Japan', value: 2100 },
+    { name: 'South Korea', value: 980 },
+    { name: 'Mexico', value: 670 },
+    { name: 'Indonesia', value: 890 },
+    { name: 'Saudi Arabia', value: 450 },
+    { name: 'South Africa', value: 340 },
+    { name: 'Egypt', value: 280 },
+    { name: 'Nigeria', value: 220 }
+];
+
+// Fetch and register world map
+fetch('https://raw.githubusercontent.com/apache/echarts/5.4.3/test/data/map/json/world.json')
+    .then(response => response.json())
+    .then(worldJson => {
+        echarts.registerMap('world', worldJson);
+        
+        const option = {
+            title: {
+                text: 'Global Data Distribution',
+                subtext: 'Geographic Heatmap',
+                left: 'center',
+                textStyle: {
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    color: '#333'
+                }
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: function(params) {
+                    return params.name + '<br/>Value: ' + (params.value || 'No data');
+                }
+            },
+            visualMap: {
+                min: 0,
+                max: 6000,
+                text: ['High', 'Low'],
+                realtime: false,
+                calculable: true,
+                inRange: {
+                    color: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0284c7', '#0369a1', '#075985']
+                },
+                textStyle: {
+                    color: '#333'
+                }
+            },
+            series: [
+                {
+                    name: 'World Data',
+                    type: 'map',
+                    map: 'world',
+                    roam: true,
+                    emphasis: {
+                        label: {
+                            show: true
+                        },
+                        itemStyle: {
+                            areaColor: '#8b5cf6',
+                            borderColor: '#6d28d9'
+                        }
+                    },
+                    itemStyle: {
+                        borderColor: '#fff',
+                        borderWidth: 0.5
+                    },
+                    data: data
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+
+        window.addEventListener('resize', () => {
+            myChart.resize();
+        });
+    })
+    .catch(error => {
+        console.error('Error loading world map:', error);
+        chartDom.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading map data. Please check console.</div>';
+    });`
   }
 };
 
@@ -304,13 +486,9 @@ const Editor = () => {
   }, [searchParams]);
 
   const runCode = () => {
-    const fullCode = html.replace(
-      '</head>',
-      `<style>${css}</style></head>`
-    ).replace(
-      '</body>',
-      `<script>${js}</script></body>`
-    );
+    const fullCode = html
+      .replace('</head>', () => `<style>${css}</style></head>`)
+      .replace('</body>', () => `<script>${js}<\/script></body>`);
 
     setPreviewCode(fullCode);
     toast.success("Code executed successfully!");
@@ -318,24 +496,20 @@ const Editor = () => {
 
   // Auto-update preview when code changes
   useEffect(() => {
-    const fullCode = html.replace(
-      '</head>',
-      `<style>${css}</style></head>`
-    ).replace(
-      '</body>',
-      `<script>${js}</script></body>`
-    );
+    const fullCode = html
+      .replace('</head>', () => `<style>${css}</style></head>`)
+      .replace('</body>', () => `<script>${js}<\/script></body>`);
+      
     setPreviewCode(fullCode);
   }, [html, css, js]);
 
   const copyIframeCode = () => {
-    const fullCode = html.replace(
-      '</head>',
-      `<style>${css}</style></head>`
-    ).replace(
-      '</body>',
-      `<script>${js}</script></body>`
-    );
+    const styleTag = `<style>${css}</style></head>`;
+    const scriptTag = `<script>${js}<\/script></body>`;
+    
+    const fullCode = html
+      .replace('</head>', styleTag)
+      .replace('</body>', scriptTag);
 
     const iframeCode = `<iframe 
   srcdoc="${fullCode.replace(/"/g, '&quot;')}" 
@@ -350,13 +524,12 @@ const Editor = () => {
   };
 
   const downloadCode = () => {
-    const fullCode = html.replace(
-      '</head>',
-      `<style>${css}</style></head>`
-    ).replace(
-      '</body>',
-      `<script>${js}</script></body>`
-    );
+    const styleTag = `<style>${css}</style></head>`;
+    const scriptTag = `<script>${js}<\/script></body>`;
+    
+    const fullCode = html
+      .replace('</head>', styleTag)
+      .replace('</body>', scriptTag);
 
     const blob = new Blob([fullCode], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
