@@ -65,7 +65,7 @@ const MappingRow: React.FC<MappingRowProps> = ({
   );
 
   const handleColumnChange = (columnName: string) => {
-    if (columnName === '') {
+    if (columnName === '__none__') {
       onMappingChange(null);
       return;
     }
@@ -110,7 +110,7 @@ const MappingRow: React.FC<MappingRowProps> = ({
 
       <div className="flex-1 min-w-0">
         <Select
-          value={mapping?.csvColumn || ''}
+          value={mapping?.csvColumn || '__none__'}
           onValueChange={handleColumnChange}
           disabled={disabled}
         >
@@ -118,7 +118,7 @@ const MappingRow: React.FC<MappingRowProps> = ({
             <SelectValue placeholder="Select CSV column" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No mapping</SelectItem>
+            <SelectItem value="__none__">No mapping</SelectItem>
             {csvColumns.map((column) => (
               <SelectItem key={column.name} value={column.name}>
                 <div className="flex items-center gap-2">
