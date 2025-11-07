@@ -69,8 +69,30 @@ export interface VegaLiteSpec {
 }
 
 /**
+ * Vega Specification
+ * Complete Vega visualization specification
+ */
+export interface VegaSpec {
+  $schema?: string;
+  description?: string;
+  width?: number;
+  height?: number;
+  padding?: unknown;
+  autosize?: unknown;
+  data?: unknown[];
+  signals?: unknown[];
+  scales?: unknown[];
+  marks?: unknown[];
+  axes?: unknown[];
+  legends?: unknown[];
+  title?: unknown;
+  config?: unknown;
+  [key: string]: unknown;
+}
+
+/**
  * Deneb Template Structure
- * Complete Deneb template including metadata, config, and Vega-Lite spec
+ * Complete Deneb template including metadata, config, and Vega or Vega-Lite spec
  */
 export interface DenebTemplate {
   $schema?: string;
@@ -81,6 +103,7 @@ export interface DenebTemplate {
   parameters?: DenebParameter[];
   config?: Record<string, unknown>;
   vegaLite?: VegaLiteSpec;
+  vega?: VegaSpec;
   template?: VegaLiteSpec;
   version?: string;
 }
