@@ -79,6 +79,14 @@ const baseTemplates: Template[] = [
     tags: ["geographic", "heatmap", "countries"],
     type: "code",
   },
+  {
+    id: "7",
+    title: "Interactive Multi-Series Chart",
+    description: "Beautiful interactive chart with multiple data series and advanced hover tooltips",
+    library: "Plotly",
+    category: "Line Charts",
+    tags: ["interactive", "multi-series", "responsive"],
+  },
 ];
 
 const denebTemplateCards: Template[] = denebTemplates.map((entry) => ({
