@@ -7,8 +7,71 @@
  * - Preview HTML
  */
 
-import { DenebTemplate, VegaLiteSpec } from './types';
+import { DenebTemplate, VegaLiteSpec, VegaSpec } from './types';
 import { getVegaLiteSpec } from './loader';
+
+/**
+ * Helper function to inject data into a spec (handles both Vega and Vega-Lite)
+ */
+const injectDataIntoSpec = (
+  spec: VegaLiteSpec | VegaSpec,
+  data?: Record<string, unknown>[] | unknown
+): VegaLiteSpec | VegaSpec => {
+  if (!data) {
+    return spec;
+  }
+
+  const dataValues = Array.isArray(data) ? data : [data];
+
+  // Check if this is a Vega spec (has data as array) or Vega-Lite (has data as object)
+  const isVegaSpec = spec.$schema?.includes('vega/v5') || 
+                     (Array.isArray(spec.data) && spec.data.length > 0 && typeof spec.data[0] === 'object' && 'name' in spec.data[0]);
+
+  if (isVegaSpec && Array.isArray(spec.data) && spec.data.length > 0) {
+    // For Vega specs: inject data into appropriate data sources
+    const dataArray = spec.data.map((dataSource: unknown, index: number) => {
+      if (typeof dataSource === 'object' && dataSource !== null && 'name' in dataSource) {
+        const ds = dataSource as Record<string, unknown>;
+        
+        // Inject if data source has a URL (external data) and no values yet
+        // Also inject into first source or specifically named sources if they don't have values
+        const hasUrl = !!ds.url;
+        const isNamedDataSource = ds.name === 'table' || ds.name === 'dataset';
+        const isFirstSource = index === 0;
+        
+        const shouldInject = !ds.values && (hasUrl || isNamedDataSource || isFirstSource);
+        
+        if (shouldInject) {
+          // Remove URL if present and add values, but keep other properties like format, transform
+          const { url, ...restProps } = ds;
+          return {
+            ...restProps,
+            values: dataValues,
+          };
+        }
+      }
+      return dataSource;
+    });
+    
+    return {
+      ...spec,
+      data: dataArray,
+    } as VegaLiteSpec | VegaSpec;
+  } else {
+    // For Vega-Lite specs: only replace if no URL is specified
+    if (typeof spec.data === 'object' && spec.data !== null && 'url' in spec.data) {
+      // Don't inject if spec already has a URL
+      return spec;
+    }
+    
+    return {
+      ...spec,
+      data: {
+        values: dataValues,
+      },
+    } as VegaLiteSpec | VegaSpec;
+  }
+};
 
 /**
  * Generates HTML for rendering a Deneb template with Vega-Lite
@@ -34,8 +97,8 @@ export const generateHTMLFromTemplate = (
   const theme = options?.theme || 'default';
   const showActions = options?.actions !== false;
 
-  // Create Vega-Lite spec with default settings
-  const enhancedSpec: VegaLiteSpec = {
+  // Create Vega or Vega-Lite spec with default settings
+  const enhancedSpec: VegaLiteSpec | VegaSpec = {
     ...vegaSpec,
     width: vegaSpec.width || 600,
     height: vegaSpec.height || 400,
@@ -126,16 +189,7 @@ export const generateIFrameHTML = (
   }
 
   // Merge data if provided
-  let finalSpec = { ...vegaSpec } as Record<string, unknown>;
-  if (data) {
-    finalSpec = {
-      ...vegaSpec,
-      data: {
-        values: Array.isArray(data) ? data : [data],
-      },
-    };
-  }
-
+  const finalSpec = injectDataIntoSpec(vegaSpec, data);
   const specJson = JSON.stringify(finalSpec);
 
   return `<!DOCTYPE html>
@@ -181,16 +235,7 @@ export const createTemplatePreviewHTML = (
     return '<div>Error: Invalid template</div>';
   }
 
-  let finalSpec = { ...vegaSpec } as Record<string, unknown>;
-  if (data) {
-    finalSpec = {
-      ...vegaSpec,
-      data: {
-        values: Array.isArray(data) ? data : [data],
-      },
-    };
-  }
-
+  const finalSpec = injectDataIntoSpec(vegaSpec, data);
   const specJson = JSON.stringify(finalSpec);
 
   return `<!DOCTYPE html>
@@ -336,16 +381,7 @@ export const createTemplateViewer = (
     return '<div>Error: Invalid template</div>';
   }
 
-  let finalSpec = { ...vegaSpec } as Record<string, unknown>;
-  if (data) {
-    finalSpec = {
-      ...vegaSpec,
-      data: {
-        values: Array.isArray(data) ? data : [data],
-      },
-    };
-  }
-
+  const finalSpec = injectDataIntoSpec(vegaSpec, data);
   const specJson = JSON.stringify(finalSpec);
   const templateJson = JSON.stringify(template);
 

@@ -63,14 +63,14 @@ export const validateDenebTemplate = (template: unknown): ValidationResult => {
     validateParameters(tmpl.parameters, errors, warnings);
   }
 
-  // Validate Vega-Lite spec (vegaLite or template field)
-  const vegaSpec = (tmpl.vegaLite || tmpl.template) as unknown;
+  // Validate Vega or Vega-Lite spec (vegaLite, vega, or template field)
+  const vegaSpec = (tmpl.vegaLite || tmpl.vega || tmpl.template) as unknown;
   if (!vegaSpec) {
-    errors.push('Template must include a "vegaLite" or "template" field with Vega-Lite specification');
+    errors.push('Template must include a "vegaLite", "vega", or "template" field with specification');
   } else if (typeof vegaSpec === 'object') {
-    validateVegaLiteSpec(vegaSpec, errors, warnings);
+    validateSpec(vegaSpec, errors, warnings);
   } else {
-    errors.push('Vega-Lite specification must be an object');
+    errors.push('Vega/Vega-Lite specification must be an object');
   }
 
   return {
@@ -161,20 +161,73 @@ const validateParameters = (
 };
 
 /**
- * Validates Vega-Lite specification structure
+ * Validates Vega or Vega-Lite specification structure
  */
-const validateVegaLiteSpec = (
+const validateSpec = (
   spec: unknown,
   errors: string[],
   warnings: string[]
 ): void => {
   if (typeof spec !== 'object' || spec === null) {
-    errors.push('Vega-Lite specification must be a valid object');
+    errors.push('Specification must be a valid object');
     return;
   }
 
   const s = spec as Record<string, unknown>;
 
+  // Detect if this is a Vega (v5) or Vega-Lite spec
+  const isVegaSpec = s.$schema?.toString().includes('vega/v5') || 
+                     ('marks' in s && Array.isArray(s.marks));
+
+  if (isVegaSpec) {
+    // Validate Vega spec
+    validateVegaSpec(s, errors, warnings);
+  } else {
+    // Validate Vega-Lite spec
+    validateVegaLiteSpec(s, errors, warnings);
+  }
+};
+
+/**
+ * Validates Vega specification structure
+ */
+const validateVegaSpec = (
+  s: Record<string, unknown>,
+  errors: string[],
+  warnings: string[]
+): void => {
+  // Check for basic Vega structure
+  const hasData = 'data' in s;
+  const hasMarks = 'marks' in s;
+
+  if (!hasMarks) {
+    errors.push('Vega spec should have "marks" property');
+  }
+
+  // Validate data structure if present
+  if (hasData && Array.isArray(s.data)) {
+    const dataArray = s.data as unknown[];
+    dataArray.forEach((dataSource, index) => {
+      if (typeof dataSource === 'object' && dataSource !== null) {
+        const ds = dataSource as Record<string, unknown>;
+        if (!ds.name) {
+          warnings.push(`Vega data[${index}] should have a "name" property`);
+        }
+      }
+    });
+  } else if (hasData && !Array.isArray(s.data)) {
+    errors.push('Vega spec data must be an array of data sources');
+  }
+};
+
+/**
+ * Validates Vega-Lite specification structure
+ */
+const validateVegaLiteSpec = (
+  s: Record<string, unknown>,
+  errors: string[],
+  warnings: string[]
+): void => {
   // Check for basic Vega-Lite structure
   const hasData = 'data' in s;
   const hasMark = 'mark' in s;
@@ -295,9 +348,9 @@ export const validateRequiredFields = (template: DenebTemplate): ValidationResul
     errors.push('Template name is required');
   }
 
-  const vegaSpec = template.vegaLite || template.template;
+  const vegaSpec = template.vegaLite || template.vega || template.template;
   if (!vegaSpec) {
-    errors.push('Template must include Vega-Lite specification');
+    errors.push('Template must include Vega or Vega-Lite specification');
   }
 
   return {

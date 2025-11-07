@@ -8,7 +8,7 @@
  * - Base64 encoded templates
  */
 
-import { DenebTemplate, VegaLiteSpec } from './types';
+import { DenebTemplate, VegaLiteSpec, VegaSpec } from './types';
 import { validateDenebTemplate } from './validation';
 
 /**
@@ -100,6 +100,7 @@ export const normalizeTemplate = (template: unknown): DenebTemplate | null => {
 
   // Handle different template field names
   const vegaLiteSpec = (tmpl.vegaLite || tmpl.template) as VegaLiteSpec | undefined;
+  const vegaSpec = tmpl.vega as VegaSpec | undefined;
 
   return {
     name: (tmpl.name as string) || 'Unnamed Template',
@@ -110,7 +111,8 @@ export const normalizeTemplate = (template: unknown): DenebTemplate | null => {
     parameters: (tmpl.parameters as unknown[]) || undefined,
     config: (tmpl.config as Record<string, unknown>) || undefined,
     vegaLite: vegaLiteSpec,
-    template: !vegaLiteSpec && (tmpl.template as VegaLiteSpec) ? (tmpl.template as VegaLiteSpec) : undefined,
+    vega: vegaSpec,
+    template: !vegaLiteSpec && !vegaSpec && (tmpl.template as VegaLiteSpec) ? (tmpl.template as VegaLiteSpec) : undefined,
   };
 };
 
@@ -123,16 +125,16 @@ export const canLoadTemplate = (template: unknown): boolean => {
 };
 
 /**
- * Gets the Vega-Lite specification from a Deneb template
+ * Gets the Vega-Lite or Vega specification from a Deneb template
  */
-export const getVegaLiteSpec = (template: DenebTemplate): VegaLiteSpec | null => {
+export const getVegaLiteSpec = (template: DenebTemplate): VegaLiteSpec | VegaSpec | null => {
   if (!template) return null;
 
-  // Try vegaLite field first, then template field
-  const spec = template.vegaLite || template.template;
+  // Try vegaLite field first, then vega, then template field
+  const spec = template.vegaLite || template.vega || template.template;
 
   if (!spec) {
-    console.warn('No Vega-Lite specification found in template');
+    console.warn('No Vega or Vega-Lite specification found in template');
     return null;
   }
 
@@ -146,12 +148,12 @@ export const getVegaLiteSpec = (template: DenebTemplate): VegaLiteSpec | null =>
 export const applyParametersToTemplate = (
   template: DenebTemplate,
   parameters: Record<string, unknown>
-): VegaLiteSpec | null => {
+): VegaLiteSpec | VegaSpec | null => {
   const vegaSpec = getVegaLiteSpec(template);
   if (!vegaSpec) return null;
 
   // Deep clone the spec
-  const mergedSpec = JSON.parse(JSON.stringify(vegaSpec)) as VegaLiteSpec;
+  const mergedSpec = JSON.parse(JSON.stringify(vegaSpec)) as VegaLiteSpec | VegaSpec;
 
   // Apply parameters to config if present
   if (parameters && Object.keys(parameters).length > 0) {
