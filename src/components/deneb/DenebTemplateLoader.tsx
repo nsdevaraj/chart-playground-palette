@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Upload, Link as LinkIcon, Copy, Download } from 'lucide-react';
+import { AlertCircle, Upload, Link as LinkIcon, Copy, Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { DenebTemplate, ValidationResult } from '@/lib/deneb/types';
 import {
@@ -21,10 +21,13 @@ import {
   createSampleTemplate,
 } from '@/lib/deneb/loader';
 import { validateDenebTemplate } from '@/lib/deneb/validation';
+import { parseCSV, CSVParseResult } from '@/lib/csv';
+import { CSVUploader } from '@/components/csv';
 
 interface DenebTemplateLoaderProps {
   onTemplateLoaded: (template: DenebTemplate) => void;
   onValidationResult?: (result: ValidationResult) => void;
+  onCSVDataLoaded?: (data: Record<string, unknown>[]) => void;
 }
 
 /**
@@ -33,6 +36,7 @@ interface DenebTemplateLoaderProps {
 export const DenebTemplateLoader: React.FC<DenebTemplateLoaderProps> = ({
   onTemplateLoaded,
   onValidationResult,
+  onCSVDataLoaded,
 }) => {
   const [json, setJson] = useState('');
   const [url, setUrl] = useState('');
@@ -188,6 +192,13 @@ export const DenebTemplateLoader: React.FC<DenebTemplateLoaderProps> = ({
     reader.readAsText(file);
   };
 
+  const handleCSVLoaded = (content: string, result: CSVParseResult) => {
+    if (onCSVDataLoaded) {
+      onCSVDataLoaded(result.data);
+      toast.success(`Loaded ${result.rowCount} rows of CSV data`);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -215,10 +226,11 @@ export const DenebTemplateLoader: React.FC<DenebTemplateLoaderProps> = ({
         )}
 
         <Tabs defaultValue="json" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="json">JSON</TabsTrigger>
             <TabsTrigger value="url">URL</TabsTrigger>
             <TabsTrigger value="file">File</TabsTrigger>
+            <TabsTrigger value="csv">CSV Data</TabsTrigger>
             <TabsTrigger value="base64">Base64</TabsTrigger>
           </TabsList>
 
@@ -276,6 +288,25 @@ export const DenebTemplateLoader: React.FC<DenebTemplateLoaderProps> = ({
                 </p>
               </label>
             </div>
+          </TabsContent>
+
+          <TabsContent value="csv" className="space-y-3">
+            {onCSVDataLoaded ? (
+              <CSVUploader
+                onCSVLoaded={handleCSVLoaded}
+                onError={setError}
+              />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">
+                  CSV data loading is not available in this context.
+                </p>
+                <p className="text-xs mt-2">
+                  Use the CSV Data Mapper component in the template workspace.
+                </p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="base64" className="space-y-3">

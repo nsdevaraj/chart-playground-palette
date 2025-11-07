@@ -1,0 +1,11 @@
+customer_id,name,segment,registration_date,last_purchase,total_spend,avg_order_value,active,priority_score
+CUST001,Acme Corp,Enterprise,2023-01-15,2024-10-15,125000,2500,true,9.2
+CUST002,Global Industries,Growth,2023-03-22,2024-09-28,45000,1800,true,7.8
+CUST003,Local Business,SMB,2023-06-10,2024-10-01,12000,600,true,6.5
+CUST004,Startup Tech,Startup,2023-08-05,2024-08-15,8000,400,true,5.2
+CUST005,Mega Corporation,Enterprise,2022-11-30,2024-10-20,280000,5600,true,9.8
+CUST006,Regional Co,Growth,2023-04-18,2024-07-22,38000,1520,true,7.1
+CUST007,Small Shop,SMB,2023-09-12,2024-09-30,15000,750,true,6.8
+CUST008,Innovate LLC,Startup,2023-07-25,2024-06-10,9500,475,false,4.9
+CUST009,Fortune 500,Enterprise,2022-02-14,2024-10-18,450000,9000,true,9.5
+CUST010,Medium Biz,Growth,2023-05-30,2024-08-05,52000,1730,true,7.4

@@ -1,0 +1,17 @@
+region,quarter,revenue,units,profit_margin
+North America,Q1,320000,1250,15.5
+North America,Q2,360000,1400,16.2
+North America,Q3,410000,1650,17.8
+North America,Q4,470000,1850,18.3
+Europe,Q1,280000,980,14.2
+Europe,Q2,300000,1050,14.8
+Europe,Q3,330000,1180,15.1
+Europe,Q4,390000,1420,16.5
+Asia Pacific,Q1,250000,820,13.8
+Asia Pacific,Q2,310000,980,14.5
+Asia Pacific,Q3,360000,1150,15.2
+Asia Pacific,Q4,410000,1380,15.9
+Latin America,Q1,150000,520,12.5
+Latin America,Q2,170000,580,13.1
+Latin America,Q3,190000,650,13.8
+Latin America,Q4,220000,720,14.2
