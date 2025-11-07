@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import DenebTemplateViewer from "@/components/deneb/DenebTemplateViewer";
 import DenebTemplateLoader from "@/components/deneb/DenebTemplateLoader";
+import { CSVDataMapper } from "@/components/csv";
 import { useDenebTemplate } from "@/hooks/useDenebTemplate";
 import { denebTemplateMap, denebTemplates, type DenebTemplateGalleryItem } from "@/data/denebTemplates";
 import type { DenebTemplate } from "@/lib/deneb/types";
@@ -1285,6 +1286,8 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
     validate,
   } = useDenebTemplate(entry.template);
 
+  const [showCSVMapper, setShowCSVMapper] = useState(false);
+
   useEffect(() => {
     loadFromObject(entry.template);
     if (entry.sampleData && entry.sampleData.length > 0) {
@@ -1359,6 +1362,12 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
     clearError();
   };
 
+  const handleCSVDataMapped = (mappedData: Record<string, unknown>[]) => {
+    setData(mappedData);
+    setShowCSVMapper(false);
+    toast.success("CSV data mapped and applied to template");
+  };
+
   const resolvedData = Array.isArray(data) ? (data as DenebDataRow[]) : entry.sampleData;
 
   return (
@@ -1407,6 +1416,9 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" className="glow-primary" onClick={handleBindSample} disabled={!entry.sampleData || loading}>
                   Bind Sample Data
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowCSVMapper(true)} disabled={loading}>
+                  Map CSV Data
                 </Button>
                 <Button size="sm" variant="outline" onClick={handleClearData} disabled={loading}>
                   Clear Data
@@ -1559,6 +1571,32 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
           <DenebTemplateViewer template={activeTemplate} data={resolvedData} height={540} showMetadata />
         </div>
       </div>
+
+      {/* CSV Data Mapper Modal */}
+      {showCSVMapper && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold">Map CSV Data to Template</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCSVMapper(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              
+              <CSVDataMapper
+                template={activeTemplate}
+                onDataMapped={handleCSVDataMapped}
+                onError={(error) => toast.error(error)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
