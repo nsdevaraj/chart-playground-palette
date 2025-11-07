@@ -857,6 +857,165 @@ fetch('/libs/echarts/data/world.json')
         console.error('Error loading world map:', error);
         chartDom.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading map data. Please check console.</div>';
     });`
+  },
+  7: { // Plotly.js
+    name: "Plotly.js Interactive Chart",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plotly.js Visualization</title>
+    <script src="/libs/plotly/plotly.min.js"></script>
+</head>
+<body>
+    <div id="chart" style="width: 100%; height: 500px;"></div>
+</body>
+</html>`,
+    css: `body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+#chart {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}`,
+    js: `// Plotly.js Interactive Multi-Series Line Chart
+const trace1 = {
+    x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    y: [10, 15, 13, 17, 20, 18, 25, 23, 28, 30],
+    mode: 'lines+markers',
+    name: 'Series A',
+    marker: {
+        color: '#8b5cf6',
+        size: 10,
+        line: {
+            color: '#6d28d9',
+            width: 2
+        }
+    },
+    line: {
+        color: '#8b5cf6',
+        width: 3
+    }
+};
+
+const trace2 = {
+    x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    y: [5, 8, 12, 10, 15, 19, 17, 21, 24, 27],
+    mode: 'lines+markers',
+    name: 'Series B',
+    marker: {
+        color: '#06b6d4',
+        size: 10,
+        line: {
+            color: '#0891b2',
+            width: 2
+        }
+    },
+    line: {
+        color: '#06b6d4',
+        width: 3
+    }
+};
+
+const trace3 = {
+    x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    y: [3, 7, 9, 14, 12, 16, 20, 18, 22, 25],
+    mode: 'lines+markers',
+    name: 'Series C',
+    marker: {
+        color: '#10b981',
+        size: 10,
+        line: {
+            color: '#059669',
+            width: 2
+        }
+    },
+    line: {
+        color: '#10b981',
+        width: 3
+    }
+};
+
+const data = [trace1, trace2, trace3];
+
+const layout = {
+    title: {
+        text: 'Interactive Multi-Series Chart',
+        font: {
+            size: 24,
+            family: 'Segoe UI, sans-serif',
+            color: '#1f2937'
+        }
+    },
+    xaxis: {
+        title: {
+            text: 'Time Period',
+            font: {
+                size: 14,
+                color: '#6b7280'
+            }
+        },
+        showgrid: true,
+        gridcolor: '#e5e7eb'
+    },
+    yaxis: {
+        title: {
+            text: 'Values',
+            font: {
+                size: 14,
+                color: '#6b7280'
+            }
+        },
+        showgrid: true,
+        gridcolor: '#e5e7eb'
+    },
+    hovermode: 'closest',
+    showlegend: true,
+    legend: {
+        x: 1,
+        xanchor: 'right',
+        y: 1,
+        bgcolor: 'rgba(255, 255, 255, 0.8)',
+        bordercolor: '#e5e7eb',
+        borderwidth: 1
+    },
+    plot_bgcolor: '#ffffff',
+    paper_bgcolor: '#ffffff',
+    margin: {
+        l: 60,
+        r: 40,
+        t: 80,
+        b: 60
+    }
+};
+
+const config = {
+    responsive: true,
+    displayModeBar: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
+    toImageButtonOptions: {
+        format: 'png',
+        filename: 'plotly_chart',
+        height: 500,
+        width: 800,
+        scale: 2
+    }
+};
+
+Plotly.newPlot('chart', data, layout, config);
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    Plotly.Plots.resize('chart');
+});`
   }
 };
 
