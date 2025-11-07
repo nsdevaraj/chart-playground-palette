@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Code2, ExternalLink, Search, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import type { DenebTemplate } from "@/lib/deneb/types";
+import { denebTemplates } from "@/data/denebTemplates";
+import { createTemplatePreviewHTML, generateIFrameHTML } from "@/lib/deneb/renderer";
+
+type SampleRecord = Record<string, unknown>;
 
 interface Template {
   id: string;
@@ -14,9 +19,12 @@ interface Template {
   category: string;
   tags: string[];
   preview?: string;
+  type: "code" | "deneb";
+  denebTemplate?: DenebTemplate;
+  sampleData?: SampleRecord[];
 }
 
-const templates: Template[] = [
+const baseTemplates: Template[] = [
   {
     id: "1",
     title: "Interactive Line Chart",
@@ -24,14 +32,16 @@ const templates: Template[] = [
     library: "Highcharts",
     category: "Line Charts",
     tags: ["interactive", "animated", "responsive"],
+    type: "code",
   },
   {
     id: "2",
     title: "Dynamic Bar Chart",
     description: "Real-time updating bar chart with gradient colors and animations",
     library: "ECharts",
-    category: "Bar Charts", 
+    category: "Bar Charts",
     tags: ["real-time", "gradient", "dynamic"],
+    type: "code",
   },
   {
     id: "3",
@@ -40,6 +50,7 @@ const templates: Template[] = [
     library: "AG-Grid",
     category: "Data Tables",
     tags: ["sorting", "filtering", "pagination"],
+    type: "code",
   },
   {
     id: "4",
@@ -48,6 +59,7 @@ const templates: Template[] = [
     library: "D3.js",
     category: "Custom",
     tags: ["network", "force-layout", "interactive"],
+    type: "code",
   },
   {
     id: "5",
@@ -56,6 +68,7 @@ const templates: Template[] = [
     library: "Highcharts",
     category: "Dashboards",
     tags: ["financial", "candlestick", "multi-chart"],
+    type: "code",
   },
   {
     id: "6",
@@ -64,22 +77,78 @@ const templates: Template[] = [
     library: "ECharts",
     category: "Maps",
     tags: ["geographic", "heatmap", "countries"],
+    type: "code",
   },
 ];
+
+const denebTemplateCards: Template[] = denebTemplates.map((entry) => ({
+  id: entry.id,
+  title: entry.title,
+  description: entry.description,
+  library: "Deneb",
+  category: entry.category,
+  tags: entry.tags,
+  type: "deneb",
+  denebTemplate: entry.template,
+  sampleData: entry.sampleData,
+}));
+
+const templates: Template[] = [...baseTemplates, ...denebTemplateCards];
+
+const libraries = ["All", ...Array.from(new Set(templates.map((template) => template.library)))];
+
+const DenebPreview: React.FC<{ template: DenebTemplate; data?: SampleRecord[] }> = ({ template, data }) => {
+  const previewHtml = useMemo(() => generateIFrameHTML(template, data), [template, data]);
+
+  return (
+    <div className="w-full h-40 border border-border rounded-lg overflow-hidden bg-muted/40">
+      <iframe
+        title={`${template.name} preview`}
+        srcDoc={previewHtml}
+        sandbox="allow-scripts allow-same-origin"
+        className="w-full h-full bg-white"
+      />
+    </div>
+  );
+};
 
 const Gallery = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLibrary, setSelectedLibrary] = useState<string>("All");
 
-  const libraries = ["All", "Highcharts", "ECharts", "AG-Grid", "D3.js"];
-  
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesLibrary = selectedLibrary === "All" || template.library === selectedLibrary;
-    return matchesSearch && matchesLibrary;
-  });
+  const filteredTemplates = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    return templates.filter((template) => {
+      const matchesSearch =
+        term.length === 0 ||
+        template.title.toLowerCase().includes(term) ||
+        template.description.toLowerCase().includes(term) ||
+        template.category.toLowerCase().includes(term) ||
+        template.tags.some((tag) => tag.toLowerCase().includes(term));
+
+      const matchesLibrary = selectedLibrary === "All" || template.library === selectedLibrary;
+
+      return matchesSearch && matchesLibrary;
+    });
+  }, [searchTerm, selectedLibrary]);
+
+  const handlePreviewClick = useCallback((template: Template) => {
+    if (template.type !== "deneb" || !template.denebTemplate) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const previewHtml = createTemplatePreviewHTML(template.denebTemplate, template.sampleData);
+    const blob = new Blob([previewHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+
+    window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -89,7 +158,7 @@ const Gallery = () => {
           Template Gallery
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Professional chart templates to kickstart your data visualizations. 
+          Professional chart templates to kickstart your data visualizations.
           Choose from multiple libraries and customize to your needs.
         </p>
       </div>
@@ -139,7 +208,7 @@ const Gallery = () => {
                 </Badge>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               <div className="flex flex-wrap gap-1 mb-4">
                 {template.tags.map((tag) => (
@@ -148,21 +217,42 @@ const Gallery = () => {
                   </Badge>
                 ))}
               </div>
-              
-              {/* Preview placeholder */}
-              <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center mb-4">
-                <Zap className="w-8 h-8 text-muted-foreground animate-float" />
-              </div>
+
+              {template.type === "deneb" && template.denebTemplate ? (
+                <DenebPreview template={template.denebTemplate} data={template.sampleData} />
+              ) : (
+                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center mb-2">
+                  <Zap className="w-8 h-8 text-muted-foreground animate-float" />
+                </div>
+              )}
             </CardContent>
-            
+
             <CardFooter className="flex gap-2">
-              <Link to={`/editor?template=${template.id}`} className="flex-1">
+              <Link
+                to={
+                  template.type === "deneb"
+                    ? `/editor?template=${template.id}&type=deneb`
+                    : `/editor?template=${template.id}`
+                }
+                className="flex-1"
+              >
                 <Button className="w-full glow-primary">
                   <Code2 className="w-4 h-4 mr-2" />
                   Use Template
                 </Button>
               </Link>
-              <Button variant="outline" size="icon">
+              <Button
+                variant="outline"
+                size="icon"
+                type="button"
+                onClick={() => handlePreviewClick(template)}
+                disabled={template.type !== "deneb"}
+                title={
+                  template.type === "deneb"
+                    ? "Open interactive Deneb preview"
+                    : "Preview available for Deneb templates"
+                }
+              >
                 <ExternalLink className="w-4 h-4" />
               </Button>
             </CardFooter>

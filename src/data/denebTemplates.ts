@@ -1,0 +1,763 @@
+import type { DenebTemplate } from "@/lib/deneb/types";
+
+export interface DenebTemplateGalleryItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  template: DenebTemplate;
+  sampleData?: Record<string, unknown>[];
+}
+
+const regionalSalesData = [
+  { region: "North America", quarter: "Q1", revenue: 320 },
+  { region: "North America", quarter: "Q2", revenue: 360 },
+  { region: "North America", quarter: "Q3", revenue: 410 },
+  { region: "North America", quarter: "Q4", revenue: 470 },
+  { region: "Europe", quarter: "Q1", revenue: 280 },
+  { region: "Europe", quarter: "Q2", revenue: 300 },
+  { region: "Europe", quarter: "Q3", revenue: 330 },
+  { region: "Europe", quarter: "Q4", revenue: 390 },
+  { region: "Asia Pacific", quarter: "Q1", revenue: 250 },
+  { region: "Asia Pacific", quarter: "Q2", revenue: 310 },
+  { region: "Asia Pacific", quarter: "Q3", revenue: 360 },
+  { region: "Asia Pacific", quarter: "Q4", revenue: 410 },
+  { region: "Latin America", quarter: "Q1", revenue: 150 },
+  { region: "Latin America", quarter: "Q2", revenue: 170 },
+  { region: "Latin America", quarter: "Q3", revenue: 190 },
+  { region: "Latin America", quarter: "Q4", revenue: 220 },
+];
+
+const regionalSalesTemplate: DenebTemplate = {
+  name: "Regional Sales Breakdown",
+  description: "Grouped bar comparison of quarterly revenue across global regions.",
+  version: "1.0.0",
+  metadata: {
+    name: "Regional Sales Breakdown",
+    author: "ChartStudio Palette",
+    tags: ["deneb", "bar", "grouped", "vega-lite", "business"],
+    license: "MIT",
+  },
+  dataConfig: [
+    {
+      name: "dataset",
+      description: "Quarterly revenue in thousands of USD by region.",
+      type: "array",
+      required: true,
+      sampleData: regionalSalesData,
+    },
+  ],
+  vegaLite: {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    title: {
+      text: "Quarterly Revenue by Region",
+      subtitle: "FY2024 (USD thousands)",
+    },
+    description: "Grouped bar chart comparing how each region performed across quarters.",
+    width: 420,
+    height: 320,
+    data: {
+      values: regionalSalesData,
+    },
+    mark: {
+      type: "bar",
+      cornerRadiusEnd: 4,
+      tooltip: true,
+    },
+    encoding: {
+      x: {
+        field: "quarter",
+        type: "ordinal",
+        sort: ["Q1", "Q2", "Q3", "Q4"],
+        title: "Quarter",
+      },
+      y: {
+        field: "revenue",
+        type: "quantitative",
+        title: "Revenue (USD thousands)",
+      },
+      xOffset: {
+        field: "region",
+      },
+      color: {
+        field: "region",
+        type: "nominal",
+        legend: {
+          title: "Region",
+          orient: "bottom",
+        },
+        scale: {
+          scheme: "tableau10",
+        },
+      },
+      tooltip: [
+        { field: "region", type: "nominal", title: "Region" },
+        { field: "quarter", type: "ordinal", title: "Quarter" },
+        {
+          field: "revenue",
+          type: "quantitative",
+          title: "Revenue",
+          format: "~s",
+        },
+      ],
+    },
+    config: {
+      mark: {
+        tooltip: true,
+      },
+      axis: {
+        labelFontSize: 12,
+        titleFontSize: 12,
+      },
+      view: {
+        stroke: null,
+      },
+    },
+  },
+};
+
+const revenueTrendData = [
+  { date: "2024-01-01", metric: "Actual", value: 38 },
+  { date: "2024-02-01", metric: "Actual", value: 42 },
+  { date: "2024-03-01", metric: "Actual", value: 48 },
+  { date: "2024-04-01", metric: "Actual", value: 53 },
+  { date: "2024-05-01", metric: "Actual", value: 57 },
+  { date: "2024-06-01", metric: "Actual", value: 60 },
+  { date: "2024-07-01", metric: "Actual", value: 63 },
+  { date: "2024-08-01", metric: "Actual", value: 66 },
+  { date: "2024-09-01", metric: "Actual", value: 68 },
+  { date: "2024-10-01", metric: "Actual", value: 70 },
+  { date: "2024-11-01", metric: "Actual", value: 72 },
+  { date: "2024-12-01", metric: "Actual", value: 74 },
+  { date: "2024-01-01", metric: "Forecast", value: 36 },
+  { date: "2024-02-01", metric: "Forecast", value: 39 },
+  { date: "2024-03-01", metric: "Forecast", value: 44 },
+  { date: "2024-04-01", metric: "Forecast", value: 49 },
+  { date: "2024-05-01", metric: "Forecast", value: 53 },
+  { date: "2024-06-01", metric: "Forecast", value: 57 },
+  { date: "2024-07-01", metric: "Forecast", value: 60 },
+  { date: "2024-08-01", metric: "Forecast", value: 63 },
+  { date: "2024-09-01", metric: "Forecast", value: 65 },
+  { date: "2024-10-01", metric: "Forecast", value: 67 },
+  { date: "2024-11-01", metric: "Forecast", value: 69 },
+  { date: "2024-12-01", metric: "Forecast", value: 70 },
+];
+
+const revenueTrendTemplate: DenebTemplate = {
+  name: "Revenue vs Forecast Trend",
+  description: "Dual-series line chart comparing actual revenue versus forecast targets.",
+  version: "1.0.0",
+  metadata: {
+    name: "Revenue vs Forecast Trend",
+    author: "ChartStudio Palette",
+    tags: ["deneb", "line", "time-series", "forecast"],
+    license: "MIT",
+  },
+  dataConfig: [
+    {
+      name: "dataset",
+      description: "Monthly revenue and forecast values in millions of USD.",
+      type: "array",
+      required: true,
+      sampleData: revenueTrendData,
+    },
+  ],
+  vegaLite: {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    title: {
+      text: "Revenue vs Forecast Trend",
+      subtitle: "Rolling 12 months (USD millions)",
+    },
+    description: "Interactive comparison between actuals and forecast with legend highlight.",
+    width: 520,
+    height: 320,
+    data: {
+      values: revenueTrendData,
+    },
+    params: [
+      {
+        name: "highlight",
+        select: {
+          type: "point",
+          fields: ["metric"],
+        },
+        bind: "legend",
+      },
+      {
+        name: "pointHover",
+        select: {
+          type: "point",
+          on: "pointerover",
+          clear: "pointerout",
+          nearest: true,
+        },
+      },
+    ],
+    mark: {
+      type: "line",
+      interpolate: "monotone",
+      tooltip: true,
+    },
+    encoding: {
+      x: {
+        field: "date",
+        type: "temporal",
+        title: "Month",
+        axis: {
+          format: "%b",
+        },
+      },
+      y: {
+        field: "value",
+        type: "quantitative",
+        title: "Revenue (USD millions)",
+        scale: {
+          nice: true,
+        },
+      },
+      color: {
+        field: "metric",
+        type: "nominal",
+        legend: {
+          title: "Series",
+          orient: "bottom",
+        },
+        scale: {
+          range: ["#2563eb", "#f97316"],
+        },
+      },
+      strokeWidth: {
+        condition: {
+          param: "highlight",
+          empty: false,
+          value: 4,
+        },
+        value: 2,
+      },
+      tooltip: [
+        { field: "metric", type: "nominal", title: "Series" },
+        { field: "date", type: "temporal", title: "Month", format: "%b %Y" },
+        {
+          field: "value",
+          type: "quantitative",
+          title: "Value",
+          format: "~s",
+        },
+      ],
+    },
+    layer: [
+      {
+        mark: {
+          type: "line",
+          interpolate: "monotone",
+          strokeOpacity: 0.85,
+        },
+      },
+      {
+        mark: {
+          type: "point",
+          size: 80,
+          filled: true,
+        },
+        encoding: {
+          opacity: {
+            condition: {
+              param: "pointHover",
+              value: 1,
+            },
+            value: 0,
+          },
+        },
+      },
+    ],
+    config: {
+      mark: {
+        tooltip: true,
+      },
+      axis: {
+        labelFontSize: 12,
+        titleFontSize: 12,
+      },
+      view: {
+        stroke: null,
+      },
+    },
+  },
+};
+
+const segmentationData = [
+  { segment: "Enterprise", satisfaction: 88, spend: 420, customers: 120, region: "Americas" },
+  { segment: "Enterprise", satisfaction: 86, spend: 370, customers: 110, region: "EMEA" },
+  { segment: "Enterprise", satisfaction: 82, spend: 390, customers: 95, region: "APAC" },
+  { segment: "Growth", satisfaction: 75, spend: 210, customers: 340, region: "Americas" },
+  { segment: "Growth", satisfaction: 78, spend: 240, customers: 280, region: "EMEA" },
+  { segment: "Growth", satisfaction: 73, spend: 220, customers: 260, region: "APAC" },
+  { segment: "SMB", satisfaction: 68, spend: 140, customers: 510, region: "Americas" },
+  { segment: "SMB", satisfaction: 70, spend: 150, customers: 430, region: "EMEA" },
+  { segment: "SMB", satisfaction: 65, spend: 130, customers: 460, region: "APAC" },
+  { segment: "Startup", satisfaction: 74, spend: 90, customers: 620, region: "Americas" },
+  { segment: "Startup", satisfaction: 76, spend: 95, customers: 560, region: "EMEA" },
+  { segment: "Startup", satisfaction: 72, spend: 88, customers: 540, region: "APAC" },
+];
+
+const segmentationTemplate: DenebTemplate = {
+  name: "Customer Segmentation Insights",
+  description: "Scatter plot showing spend versus satisfaction by segment with regional filtering.",
+  version: "1.0.0",
+  metadata: {
+    name: "Customer Segmentation Insights",
+    author: "ChartStudio Palette",
+    tags: ["deneb", "scatter", "segmentation", "analytics"],
+    license: "MIT",
+  },
+  dataConfig: [
+    {
+      name: "dataset",
+      description: "Customer segment performance with satisfaction and spend.",
+      type: "array",
+      required: true,
+      sampleData: segmentationData,
+    },
+  ],
+  vegaLite: {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    title: {
+      text: "Customer Segmentation Insights",
+      subtitle: "Average satisfaction vs quarterly spend",
+    },
+    description: "Interactive scatter plot highlighting customer segments by region.",
+    width: 520,
+    height: 320,
+    data: {
+      values: segmentationData,
+    },
+    params: [
+      {
+        name: "segmentHover",
+        select: {
+          type: "point",
+          fields: ["segment"],
+          on: "pointerover",
+          clear: "pointerout",
+        },
+      },
+      {
+        name: "regionFilter",
+        select: {
+          type: "point",
+          fields: ["region"],
+        },
+        bind: "legend",
+      },
+    ],
+    mark: {
+      type: "circle",
+      filled: true,
+      tooltip: true,
+    },
+    encoding: {
+      x: {
+        field: "satisfaction",
+        type: "quantitative",
+        title: "Satisfaction (%)",
+        scale: {
+          domain: [60, 95],
+        },
+      },
+      y: {
+        field: "spend",
+        type: "quantitative",
+        title: "Average Quarterly Spend (USD thousands)",
+        scale: {
+          nice: true,
+        },
+      },
+      color: {
+        field: "region",
+        type: "nominal",
+        legend: {
+          title: "Region",
+          orient: "bottom",
+        },
+        scale: {
+          scheme: "set2",
+        },
+      },
+      size: {
+        field: "customers",
+        type: "quantitative",
+        title: "Customers",
+        scale: {
+          range: [80, 800],
+        },
+      },
+      opacity: {
+        condition: [
+          {
+            param: "segmentHover",
+            value: 1,
+          },
+          {
+            param: "regionFilter",
+            value: 1,
+            empty: false,
+          },
+        ],
+        value: 0.3,
+      },
+      tooltip: [
+        { field: "segment", type: "nominal", title: "Segment" },
+        { field: "region", type: "nominal", title: "Region" },
+        {
+          field: "satisfaction",
+          type: "quantitative",
+          title: "Satisfaction",
+          format: ".0f",
+        },
+        {
+          field: "spend",
+          type: "quantitative",
+          title: "Spend",
+          format: "~s",
+        },
+        {
+          field: "customers",
+          type: "quantitative",
+          title: "Customers",
+          format: "~s",
+        },
+      ],
+    },
+    config: {
+      mark: {
+        tooltip: true,
+      },
+      axis: {
+        labelFontSize: 12,
+        titleFontSize: 12,
+      },
+      view: {
+        stroke: null,
+      },
+    },
+  },
+};
+
+const performanceHeatmapData = [
+  { team: "Alpha", metric: "Velocity", score: 86 },
+  { team: "Alpha", metric: "Quality", score: 92 },
+  { team: "Alpha", metric: "Predictability", score: 78 },
+  { team: "Alpha", metric: "Collaboration", score: 84 },
+  { team: "Beta", metric: "Velocity", score: 74 },
+  { team: "Beta", metric: "Quality", score: 88 },
+  { team: "Beta", metric: "Predictability", score: 83 },
+  { team: "Beta", metric: "Collaboration", score: 76 },
+  { team: "Gamma", metric: "Velocity", score: 90 },
+  { team: "Gamma", metric: "Quality", score: 96 },
+  { team: "Gamma", metric: "Predictability", score: 88 },
+  { team: "Gamma", metric: "Collaboration", score: 92 },
+  { team: "Delta", metric: "Velocity", score: 68 },
+  { team: "Delta", metric: "Quality", score: 81 },
+  { team: "Delta", metric: "Predictability", score: 72 },
+  { team: "Delta", metric: "Collaboration", score: 74 },
+];
+
+const performanceHeatmapTemplate: DenebTemplate = {
+  name: "Team Performance Heatmap",
+  description: "Correlation heatmap highlighting team performance across agile metrics.",
+  version: "1.0.0",
+  metadata: {
+    name: "Team Performance Heatmap",
+    author: "ChartStudio Palette",
+    tags: ["deneb", "heatmap", "agile", "operations"],
+    license: "MIT",
+  },
+  dataConfig: [
+    {
+      name: "dataset",
+      description: "Team scores for agile delivery metrics.",
+      type: "array",
+      required: true,
+      sampleData: performanceHeatmapData,
+    },
+  ],
+  vegaLite: {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    title: {
+      text: "Team Performance Heatmap",
+      subtitle: "Scores across delivery metrics (0-100)",
+    },
+    description: "Heatmap showing how each team performs across key agile metrics.",
+    width: 420,
+    height: 320,
+    data: {
+      values: performanceHeatmapData,
+    },
+    mark: "rect",
+    encoding: {
+      x: {
+        field: "team",
+        type: "nominal",
+        title: "Team",
+        sort: ["Alpha", "Beta", "Gamma", "Delta"],
+      },
+      y: {
+        field: "metric",
+        type: "nominal",
+        title: "Metric",
+        sort: ["Velocity", "Quality", "Predictability", "Collaboration"],
+      },
+      color: {
+        field: "score",
+        type: "quantitative",
+        legend: {
+          title: "Score",
+          orient: "bottom",
+        },
+        scale: {
+          scheme: "turbo",
+        },
+      },
+      tooltip: [
+        { field: "team", type: "nominal", title: "Team" },
+        { field: "metric", type: "nominal", title: "Metric" },
+        {
+          field: "score",
+          type: "quantitative",
+          title: "Score",
+          format: ".0f",
+        },
+      ],
+    },
+    params: [
+      {
+        name: "heatHover",
+        select: {
+          type: "point",
+          on: "pointerover",
+          clear: "pointerout",
+          fields: ["team", "metric"],
+        },
+      },
+    ],
+    config: {
+      view: {
+        stroke: null,
+      },
+      axis: {
+        labelFontSize: 12,
+        titleFontSize: 12,
+      },
+      mark: {
+        tooltip: true,
+      },
+    },
+  },
+};
+
+const forecastBandData = [
+  { date: "2024-01-01", actual: 22, lower: 20, upper: 25 },
+  { date: "2024-02-01", actual: 24, lower: 21, upper: 27 },
+  { date: "2024-03-01", actual: 26, lower: 23, upper: 29 },
+  { date: "2024-04-01", actual: 29, lower: 26, upper: 32 },
+  { date: "2024-05-01", actual: 31, lower: 28, upper: 34 },
+  { date: "2024-06-01", actual: 33, lower: 30, upper: 36 },
+  { date: "2024-07-01", actual: 35, lower: 32, upper: 38 },
+  { date: "2024-08-01", actual: 36, lower: 33, upper: 39 },
+  { date: "2024-09-01", actual: 37, lower: 34, upper: 40 },
+  { date: "2024-10-01", actual: 39, lower: 36, upper: 42 },
+  { date: "2024-11-01", actual: 41, lower: 38, upper: 44 },
+  { date: "2024-12-01", actual: 43, lower: 40, upper: 46 },
+];
+
+const forecastBandTemplate: DenebTemplate = {
+  name: "Revenue Forecast Band",
+  description: "Forecast cone showing lower and upper bounds around the actual series.",
+  version: "1.0.0",
+  metadata: {
+    name: "Revenue Forecast Band",
+    author: "ChartStudio Palette",
+    tags: ["deneb", "forecast", "area", "band"],
+    license: "MIT",
+  },
+  dataConfig: [
+    {
+      name: "dataset",
+      description: "Monthly actual revenue with confidence interval bounds in millions of USD.",
+      type: "array",
+      required: true,
+      sampleData: forecastBandData,
+    },
+  ],
+  vegaLite: {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    title: {
+      text: "Revenue Forecast Band",
+      subtitle: "Actual results with 80% confidence interval",
+    },
+    description: "Layered chart combining forecast interval band with the actual trend line.",
+    width: 520,
+    height: 320,
+    data: {
+      values: forecastBandData,
+    },
+    layer: [
+      {
+        mark: {
+          type: "area",
+          color: "#bfdbfe",
+          opacity: 0.6,
+        },
+        encoding: {
+          x: {
+            field: "date",
+            type: "temporal",
+            title: "Month",
+            axis: {
+              format: "%b",
+            },
+          },
+          y: {
+            field: "upper",
+            type: "quantitative",
+            title: "Revenue (USD millions)",
+          },
+          y2: {
+            field: "lower",
+          },
+          tooltip: [
+            { field: "date", type: "temporal", title: "Month", format: "%b %Y" },
+            {
+              field: "lower",
+              type: "quantitative",
+              title: "Lower",
+              format: "~s",
+            },
+            {
+              field: "upper",
+              type: "quantitative",
+              title: "Upper",
+              format: "~s",
+            },
+          ],
+        },
+      },
+      {
+        mark: {
+          type: "line",
+          color: "#1d4ed8",
+          strokeWidth: 3,
+          interpolate: "monotone",
+        },
+        encoding: {
+          x: {
+            field: "date",
+            type: "temporal",
+            title: "Month",
+          },
+          y: {
+            field: "actual",
+            type: "quantitative",
+            title: "Revenue (USD millions)",
+          },
+        },
+      },
+      {
+        mark: {
+          type: "point",
+          color: "#1d4ed8",
+          filled: true,
+          size: 60,
+        },
+        encoding: {
+          x: {
+            field: "date",
+            type: "temporal",
+          },
+          y: {
+            field: "actual",
+            type: "quantitative",
+          },
+          tooltip: [
+            { field: "date", type: "temporal", title: "Month", format: "%b %Y" },
+            {
+              field: "actual",
+              type: "quantitative",
+              title: "Actual",
+              format: "~s",
+            },
+          ],
+        },
+      },
+    ],
+    config: {
+      axis: {
+        labelFontSize: 12,
+        titleFontSize: 12,
+      },
+      view: {
+        stroke: null,
+      },
+      mark: {
+        tooltip: true,
+      },
+    },
+  },
+};
+
+export const denebTemplates: DenebTemplateGalleryItem[] = [
+  {
+    id: "deneb-regional-sales",
+    title: "Regional Sales Breakdown",
+    description: "Grouped bar chart comparing quarterly revenue across global regions.",
+    category: "Comparisons",
+    tags: ["deneb", "bar", "grouped", "vega-lite", "business"],
+    template: regionalSalesTemplate,
+    sampleData: regionalSalesData,
+  },
+  {
+    id: "deneb-revenue-trend",
+    title: "Revenue vs Forecast Trend",
+    description: "Dual-series time-series chart with legend-driven highlighting.",
+    category: "Time Series",
+    tags: ["deneb", "line", "time-series", "forecast"],
+    template: revenueTrendTemplate,
+    sampleData: revenueTrendData,
+  },
+  {
+    id: "deneb-segmentation-scatter",
+    title: "Customer Segmentation Insights",
+    description: "Scatter plot with regional filtering and hover details by segment.",
+    category: "Distribution",
+    tags: ["deneb", "scatter", "segmentation", "analytics"],
+    template: segmentationTemplate,
+    sampleData: segmentationData,
+  },
+  {
+    id: "deneb-team-performance",
+    title: "Team Performance Heatmap",
+    description: "Heatmap showcasing team performance across agile delivery metrics.",
+    category: "Heatmaps",
+    tags: ["deneb", "heatmap", "operations", "agile"],
+    template: performanceHeatmapTemplate,
+    sampleData: performanceHeatmapData,
+  },
+  {
+    id: "deneb-forecast-band",
+    title: "Revenue Forecast Band",
+    description: "Forecast cone with confidence interval around actual revenue results.",
+    category: "Forecasting",
+    tags: ["deneb", "forecast", "area", "band"],
+    template: forecastBandTemplate,
+    sampleData: forecastBandData,
+  },
+];
+
+export const denebTemplateMap = denebTemplates.reduce<Record<string, DenebTemplateGalleryItem>>(
+  (acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  },
+  {},
+);

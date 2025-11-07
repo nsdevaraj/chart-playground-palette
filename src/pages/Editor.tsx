@@ -1,22 +1,64 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Play, 
-  Download, 
-  Copy, 
-  Save, 
-  RotateCcw, 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Play,
+  Download,
+  Copy,
+  Save,
+  RotateCcw,
   Settings,
   FileCode,
   Palette,
-  Zap
+  Zap,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import DenebTemplateViewer from "@/components/deneb/DenebTemplateViewer";
+import DenebTemplateLoader from "@/components/deneb/DenebTemplateLoader";
+import { useDenebTemplate } from "@/hooks/useDenebTemplate";
+import { denebTemplateMap, denebTemplates, type DenebTemplateGalleryItem } from "@/data/denebTemplates";
+import type { DenebTemplate } from "@/lib/deneb/types";
+
+type DenebDataRow = Record<string, unknown>;
+
+interface DenebTemplateWorkspaceProps {
+  entry: DenebTemplateGalleryItem;
+  invalidTemplateId: string | null;
+}
+
+const formatDataValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value.toLocaleString() : String(value);
+  }
+
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[object]";
+    }
+  }
+
+  return String(value);
+};
 
 // Template definitions for different chart libraries
 const templates = {
@@ -466,64 +508,83 @@ const defaultTemplate = templates[2]; // Default to ECharts
 
 const Editor = () => {
   const [searchParams] = useSearchParams();
+  const templateId = searchParams.get("template");
+  const templateType = searchParams.get("type");
+  const denebEntry = templateId ? denebTemplateMap[templateId] ?? null : null;
+  const isDenebTemplate = templateType === "deneb" || Boolean(denebEntry);
+
+  if (isDenebTemplate) {
+    const entry = denebEntry ?? denebTemplates[0];
+    const invalidTemplateId = templateId && !denebEntry ? templateId : null;
+
+    return (
+      <DenebTemplateWorkspace
+        key={entry.id}
+        entry={entry}
+        invalidTemplateId={invalidTemplateId}
+      />
+    );
+  }
   
-  // Initialize with template from URL or default
+  return <CodeTemplateWorkspace key={templateId ?? "default-code"} />;
+};
+
+function CodeTemplateWorkspace() {
+  const [searchParams] = useSearchParams();
+
   const initialTemplate = (() => {
-    const templateId = searchParams.get('template');
-    return (templateId && templates[templateId]) ? templates[templateId] : defaultTemplate;
+    const templateId = searchParams.get("template");
+    return templateId && templates[templateId] ? templates[templateId] : defaultTemplate;
   })();
-  
+
   const [html, setHtml] = useState(initialTemplate.html);
   const [css, setCss] = useState(initialTemplate.css);
   const [js, setJs] = useState(initialTemplate.js);
   const [activeTab, setActiveTab] = useState("html");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewCode, setPreviewCode] = useState(() => {
-    // Initialize with the full code
     return initialTemplate.html
-      .replace('</head>', () => `<style>${initialTemplate.css}</style></head>`)
-      .replace('</body>', () => `<script>${initialTemplate.js}<\/script></body>`);
+      .replace("</head>", () => `<style>${initialTemplate.css}</style></head>`)
+      .replace("</body>", () => `<script>${initialTemplate.js}</script></body>`);
   });
   const [iframeKey, setIframeKey] = useState(0);
 
-  // Load template when URL parameter changes
   useEffect(() => {
-    const templateId = searchParams.get('template');
+    const templateId = searchParams.get("template");
     if (templateId && templates[templateId]) {
       const template = templates[templateId];
       setHtml(template.html);
       setCss(template.css);
       setJs(template.js);
-      setIframeKey(prev => prev + 1); // Force iframe remount
+      setIframeKey((prev) => prev + 1);
       toast.success(`Loaded ${template.name} template!`);
     }
   }, [searchParams]);
 
   const runCode = () => {
     const fullCode = html
-      .replace('</head>', () => `<style>${css}</style></head>`)
-      .replace('</body>', () => `<script>${js}<\/script></body>`);
+      .replace("</head>", () => `<style>${css}</style></head>`)
+      .replace("</body>", () => `<script>${js}</script></body>`);
 
     setPreviewCode(fullCode);
     toast.success("Code executed successfully!");
   };
 
-  // Auto-update preview when code changes
   useEffect(() => {
     const fullCode = html
-      .replace('</head>', () => `<style>${css}</style></head>`)
-      .replace('</body>', () => `<script>${js}<\/script></body>`);
-      
+      .replace("</head>", () => `<style>${css}</style></head>`)
+      .replace("</body>", () => `<script>${js}</script></body>`);
+
     setPreviewCode(fullCode);
   }, [html, css, js]);
 
   const copyIframeCode = () => {
     const fullCode = html
-      .replace('</head>', () => `<style>${css}</style></head>`)
-      .replace('</body>', () => `<script>${js}<\/script></body>`);
+      .replace("</head>", () => `<style>${css}</style></head>`)
+      .replace("</body>", () => `<script>${js}</script></body>`);
 
     const iframeCode = `<iframe 
-  srcdoc="${fullCode.replace(/"/g, '&quot;')}" 
+  srcdoc="${fullCode.replace(/"/g, "&quot;")}" 
   width="100%" 
   height="400" 
   frameborder="0" 
@@ -536,14 +597,14 @@ const Editor = () => {
 
   const downloadCode = () => {
     const fullCode = html
-      .replace('</head>', () => `<style>${css}</style></head>`)
-      .replace('</body>', () => `<script>${js}<\/script></body>`);
+      .replace("</head>", () => `<style>${css}</style></head>`)
+      .replace("</body>", () => `<script>${js}</script></body>`);
 
-    const blob = new Blob([fullCode], { type: 'text/html' });
+    const blob = new Blob([fullCode], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'chart-visualization.html';
+    a.download = "chart-visualization.html";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -553,40 +614,48 @@ const Editor = () => {
   };
 
   const resetCode = () => {
-    const templateId = searchParams.get('template');
-    const template = (templateId && templates[templateId]) 
-      ? templates[templateId] 
-      : defaultTemplate;
-    
+    const templateId = searchParams.get("template");
+    const template = templateId && templates[templateId] ? templates[templateId] : defaultTemplate;
+
     setHtml(template.html);
     setCss(template.css);
     setJs(template.js);
-    setIframeKey(prev => prev + 1); // Force iframe remount
+    setIframeKey((prev) => prev + 1);
     toast.success("Code reset to template!");
   };
 
   const getCurrentCode = () => {
     switch (activeTab) {
-      case "html": return html;
-      case "css": return css;
-      case "js": return js;
-      default: return "";
+      case "html":
+        return html;
+      case "css":
+        return css;
+      case "js":
+        return js;
+      default:
+        return "";
     }
   };
 
   const setCurrentCode = (value: string) => {
     switch (activeTab) {
-      case "html": setHtml(value); break;
-      case "css": setCss(value); break;
-      case "js": setJs(value); break;
+      case "html":
+        setHtml(value);
+        break;
+      case "css":
+        setCss(value);
+        break;
+      case "js":
+        setJs(value);
+        break;
+      default:
+        break;
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
-        
-        {/* Code Editor */}
         <div className="flex-1 flex flex-col">
           <Card className="glass flex-1 flex flex-col">
             <CardHeader className="pb-4">
@@ -606,25 +675,31 @@ const Editor = () => {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="flex-1 flex flex-col">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <TabsList className="grid w-fit grid-cols-3">
                     <TabsTrigger value="html" className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">HTML</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        HTML
+                      </Badge>
                     </TabsTrigger>
                     <TabsTrigger value="css" className="flex items-center gap-2">
                       <Palette className="w-3 h-3" />
-                      <Badge variant="outline" className="text-xs">CSS</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        CSS
+                      </Badge>
                     </TabsTrigger>
                     <TabsTrigger value="js" className="flex items-center gap-2">
                       <Zap className="w-3 h-3" />
-                      <Badge variant="outline" className="text-xs">JS</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        JS
+                      </Badge>
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                
+
                 <div className="flex-1">
                   <Textarea
                     value={getCurrentCode()}
@@ -638,7 +713,6 @@ const Editor = () => {
           </Card>
         </div>
 
-        {/* Preview Panel */}
         <div className="flex-1 flex flex-col">
           <Card className="glass flex-1 flex flex-col">
             <CardHeader className="pb-4">
@@ -663,7 +737,7 @@ const Editor = () => {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="flex-1">
               <div className="w-full h-full border border-border rounded-lg overflow-hidden bg-white">
                 <iframe
@@ -681,6 +755,297 @@ const Editor = () => {
       </div>
     </div>
   );
-};
+}
+
+function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorkspaceProps) {
+  const {
+    template,
+    data,
+    error,
+    validationResult,
+    loading,
+    loadFromObject,
+    setData,
+    clearError,
+    validate,
+  } = useDenebTemplate(entry.template);
+
+  useEffect(() => {
+    loadFromObject(entry.template);
+    if (entry.sampleData && entry.sampleData.length > 0) {
+      setData(entry.sampleData);
+    } else {
+      setData(null);
+    }
+    clearError();
+  }, [entry, loadFromObject, setData, clearError]);
+
+  const activeTemplate = template ?? entry.template;
+
+  const headerTitle = activeTemplate.name || entry.title;
+  const headerDescription = activeTemplate.description || entry.description;
+  const headerTags =
+    activeTemplate.metadata?.tags && activeTemplate.metadata.tags.length > 0
+      ? activeTemplate.metadata.tags
+      : entry.tags;
+
+  const dataRows = useMemo<DenebDataRow[]>(() => {
+    if (Array.isArray(data) && data.every((row) => row && typeof row === "object")) {
+      return data as DenebDataRow[];
+    }
+    return entry.sampleData ?? [];
+  }, [data, entry.sampleData]);
+
+  const dataColumns = dataRows.length > 0 ? Object.keys(dataRows[0]) : [];
+  const rowCount = dataRows.length;
+  const warnings = validationResult?.warnings ?? [];
+
+  const handleBindSample = () => {
+    if (entry.sampleData) {
+      setData(entry.sampleData);
+      clearError();
+      toast.success("Sample data bound to template");
+    } else {
+      toast.error("No sample data available for this template");
+    }
+  };
+
+  const handleClearData = () => {
+    setData(null);
+    clearError();
+    toast.success("Data cleared from template");
+  };
+
+  const handleResetTemplate = () => {
+    loadFromObject(entry.template);
+    if (entry.sampleData && entry.sampleData.length > 0) {
+      setData(entry.sampleData);
+    } else {
+      setData(null);
+    }
+    clearError();
+    toast.success("Template reset to gallery version");
+  };
+
+  const handleValidateTemplate = () => {
+    const result = validate();
+    if (result.valid) {
+      toast.success("Template validated successfully");
+    } else {
+      toast.error("Template validation failed", {
+        description: result.errors.slice(0, 3).join("\n"),
+      });
+    }
+  };
+
+  const handleTemplateLoaded = (loadedTemplate: DenebTemplate) => {
+    loadFromObject(loadedTemplate);
+    setData(null);
+    clearError();
+  };
+
+  const resolvedData = Array.isArray(data) ? (data as DenebDataRow[]) : entry.sampleData;
+
+  return (
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="space-y-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">Deneb</Badge>
+            <h1 className="text-3xl font-semibold">{headerTitle}</h1>
+          </div>
+          <p className="text-muted-foreground mt-2 max-w-3xl">{headerDescription}</p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {headerTags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {invalidTemplateId && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Template “{invalidTemplateId}” was not found in the gallery. Showing the first Deneb example instead.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Template Controls</CardTitle>
+              <CardDescription>Bind data, validate, or reset the Deneb specification.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" className="glow-primary" onClick={handleBindSample} disabled={!entry.sampleData || loading}>
+                  Bind Sample Data
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleClearData} disabled={loading}>
+                  Clear Data
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleResetTemplate} disabled={loading}>
+                  Reset Template
+                </Button>
+                <Button size="sm" variant="secondary" onClick={handleValidateTemplate} disabled={loading}>
+                  Validate Spec
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {validationResult ? (
+                  <Badge
+                    variant={validationResult.valid ? "default" : "destructive"}
+                    className="flex items-center gap-1"
+                  >
+                    {validationResult.valid ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <AlertCircle className="h-3 w-3" />
+                    )}
+                    {validationResult.valid ? "Valid template" : "Has validation errors"}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">Not validated</Badge>
+                )}
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  {rowCount} {rowCount === 1 ? "row" : "rows"} bound
+                </Badge>
+                {loading && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading
+                  </Badge>
+                )}
+              </div>
+
+              <div className="space-y-3 text-sm">
+                {activeTemplate.metadata?.author && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Author</p>
+                    <p>{activeTemplate.metadata.author}</p>
+                  </div>
+                )}
+                {activeTemplate.metadata?.license && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">License</p>
+                    <p>{activeTemplate.metadata.license}</p>
+                  </div>
+                )}
+                {activeTemplate.version && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Version</p>
+                    <p>{activeTemplate.version}</p>
+                  </div>
+                )}
+              </div>
+
+              {activeTemplate.dataConfig && activeTemplate.dataConfig.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Data requirements</p>
+                  <div className="space-y-2">
+                    {activeTemplate.dataConfig.map((config) => (
+                      <div key={config.name} className="rounded border border-dashed border-border px-3 py-2">
+                        <p className="text-sm font-medium">{config.name}</p>
+                        {config.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{config.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Sample Data</CardTitle>
+              <CardDescription>Preview of the data currently bound to this template.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {dataRows.length > 0 ? (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {dataColumns.map((column) => (
+                          <TableHead key={column} className="capitalize">
+                            {column.replace(/_/g, " ")}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dataRows.slice(0, 8).map((row, index) => (
+                        <TableRow key={index}>
+                          {dataColumns.map((column) => (
+                            <TableCell key={column}>{formatDataValue(row[column])}</TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {dataRows.length > 8 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Showing first 8 of {dataRows.length} rows.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No data bound to this template yet.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <DenebTemplateLoader onTemplateLoaded={handleTemplateLoaded} />
+        </div>
+
+        <div className="space-y-4">
+          {validationResult && !validationResult.valid && validationResult.errors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {validationResult.errors.map((err, idx) => (
+                    <li key={idx}>{err}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {warnings.length > 0 && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {warnings.map((warn, idx) => (
+                    <li key={idx}>{warn}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <DenebTemplateViewer template={activeTemplate} data={resolvedData} height={540} showMetadata />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Editor;
