@@ -175,99 +175,78 @@ const revenueTrendTemplate: DenebTemplate = {
     data: {
       values: revenueTrendData,
     },
-    params: [
-      {
-        name: "highlight",
-        select: {
-          type: "point",
-          fields: ["metric"],
-        },
-        bind: "legend",
-      },
-      {
-        name: "pointHover",
-        select: {
-          type: "point",
-          on: "pointerover",
-          clear: "pointerout",
-          nearest: true,
-        },
-      },
-    ],
-    mark: {
-      type: "line",
-      interpolate: "monotone",
-      tooltip: true,
-    },
-    encoding: {
-      x: {
-        field: "date",
-        type: "temporal",
-        title: "Month",
-        axis: {
-          format: "%b",
-        },
-      },
-      y: {
-        field: "value",
-        type: "quantitative",
-        title: "Revenue (USD millions)",
-        scale: {
-          nice: true,
-        },
-      },
-      color: {
-        field: "metric",
-        type: "nominal",
-        legend: {
-          title: "Series",
-          orient: "bottom",
-        },
-        scale: {
-          range: ["#2563eb", "#f97316"],
-        },
-      },
-      strokeWidth: {
-        condition: {
-          param: "highlight",
-          empty: false,
-          value: 4,
-        },
-        value: 2,
-      },
-      tooltip: [
-        { field: "metric", type: "nominal", title: "Series" },
-        { field: "date", type: "temporal", title: "Month", format: "%b %Y" },
-        {
-          field: "value",
-          type: "quantitative",
-          title: "Value",
-          format: "~s",
-        },
-      ],
-    },
     layer: [
       {
+        params: [
+          {
+            name: "highlight",
+            select: {
+              type: "point",
+              fields: ["metric"],
+            },
+            bind: "legend",
+          },
+        ],
         mark: {
           type: "line",
           interpolate: "monotone",
-          strokeOpacity: 0.85,
-        },
-      },
-      {
-        mark: {
-          type: "point",
-          size: 80,
-          filled: true,
+          point: true,
+          tooltip: true,
         },
         encoding: {
+          x: {
+            field: "date",
+            type: "temporal",
+            title: "Month",
+            axis: {
+              format: "%b",
+            },
+          },
+          y: {
+            field: "value",
+            type: "quantitative",
+            title: "Revenue (USD millions)",
+            scale: {
+              nice: true,
+            },
+          },
+          color: {
+            field: "metric",
+            type: "nominal",
+            legend: {
+              title: "Series",
+              orient: "bottom",
+            },
+            scale: {
+              range: ["#2563eb", "#f97316"],
+            },
+          },
+          strokeWidth: {
+            condition: {
+              param: "highlight",
+              empty: false,
+              value: 4,
+            },
+            value: 2,
+          },
           opacity: {
             condition: {
-              param: "pointHover",
+              param: "highlight",
               value: 1,
+              empty: false,
             },
-            value: 0,
+            value: 0.4,
           },
+          tooltip: [
+            { field: "metric", type: "nominal", title: "Series" },
+            { field: "date", type: "temporal", title: "Month", format: "%b %Y" },
+            {
+              field: "value",
+              type: "quantitative",
+              title: "Value",
+              format: "~s",
+            },
+          ],
         },
       },
     ],
