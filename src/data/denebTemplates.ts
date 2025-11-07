@@ -6240,44 +6240,60 @@ const coronationArcTemplate: DenebTemplate = {
 const forceDirectedGraphData = {
   "nodes": [
     {
-      "name": "Ledger+",
-      "group": "Accounting"
+      "name": "PowerBI",
+      "group": "BI Tools"
     },
     {
-      "name": "ConnectEase",
-      "group": "Customer"
+      "name": "Tableau",
+      "group": "BI Tools"
     },
     {
-      "name": "SinteractPro",
-      "group": "Customer"
+      "name": "Google Data Studio",
+      "group": "BI Tools"
     },
     {
-      "name": "PayRoller",
-      "group": "Accounting"
+      "name": "QlikView",
+      "group": "BI Tools"
     },
     {
-      "name": "CashFlowX",
-      "group": "Accounting"
+      "name": "GoodData",
+      "group": "BI Tools"
     },
     {
-      "name": "BookKeepPro",
-      "group": "Accounting"
+      "name": "Cognos Analytics",
+      "group": "Analytics"
     },
     {
-      "name": "TaxTrack",
-      "group": "Accounting"
+      "name": "MicroStrategy",
+      "group": "Analytics"
     },
     {
-      "name": "AuditWise",
-      "group": "Accounting"
+      "name": "Yellowfin",
+      "group": "Analytics"
     },
     {
-      "name": "ExpenseEZ",
-      "group": "Accounting"
+      "name": "Domo",
+      "group": "Analytics"
     },
     {
-      "name": "ProfitMax",
-      "group": "Accounting"
+      "name": "Sisense",
+      "group": "Analytics"
+    },
+    {
+      "name": "Birst",
+      "group": "Cloud BI"
+    },
+    {
+      "name": "Periscope Data",
+      "group": "Cloud BI"
+    },
+    {
+      "name": "FDX-Elite",
+      "group": "Finance"
+    },
+    {
+      "name": "AML-Secure",
+      "group": "Finance"
     }
   ],
   "links": [
