@@ -6736,12 +6736,23 @@ const forceDirectedGraphTemplate: DenebTemplate = {
   ],
   "data": [
     {
+      "name": "dataset",
+      "values": [forceDirectedGraphData]
+    },
+    {
       "name": "link-data-raw",
-      "url": "https://raw.githubusercontent.com/PBI-David/Deneb-Showcase/main/Force%20Directed%20Graph/data.json",
-      "format": {
-        "type": "json",
-        "property": "links"
-      }
+      "source": "dataset",
+      "transform": [
+        {
+          "type": "flatten",
+          "fields": ["links"]
+        },
+        {
+          "type": "project",
+          "fields": ["links.source", "links.target", "links.value"],
+          "as": ["source", "target", "value"]
+        }
+      ]
     },
     {
       "name": "link-data",
@@ -6801,12 +6812,17 @@ const forceDirectedGraphTemplate: DenebTemplate = {
     },
     {
       "name": "node-data",
-      "url": "https://raw.githubusercontent.com/PBI-David/Deneb-Showcase/main/Force%20Directed%20Graph/data.json",
-      "format": {
-        "type": "json",
-        "property": "nodes"
-      },
+      "source": "dataset",
       "transform": [
+        {
+          "type": "flatten",
+          "fields": ["nodes"]
+        },
+        {
+          "type": "project",
+          "fields": ["nodes.name", "nodes.group"],
+          "as": ["name", "group"]
+        },
         {
           "type": "lookup",
           "from": "source-connections",
