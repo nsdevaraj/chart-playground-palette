@@ -363,73 +363,335 @@ Highcharts.stockChart('chart', {
     box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }`,
-    js: `// ECharts Geographic Heatmap
+    js: `// ECharts Geographic Heatmap with Drill-down Support
 const chartDom = document.getElementById('chart');
 const myChart = echarts.init(chartDom);
 
-// Sample data for countries
-const data = [
-    { name: 'United States', value: 2890 },
-    { name: 'Brazil', value: 1350 },
-    { name: 'China', value: 5650 },
-    { name: 'India', value: 3200 },
-    { name: 'Russia', value: 1890 },
-    { name: 'Canada', value: 780 },
-    { name: 'Australia', value: 920 },
-    { name: 'Germany', value: 1560 },
-    { name: 'France', value: 1240 },
-    { name: 'United Kingdom', value: 1100 },
-    { name: 'Japan', value: 2100 },
-    { name: 'South Korea', value: 980 },
-    { name: 'Mexico', value: 670 },
-    { name: 'Indonesia', value: 890 },
-    { name: 'Saudi Arabia', value: 450 },
-    { name: 'South Africa', value: 340 },
-    { name: 'Egypt', value: 280 },
-    { name: 'Nigeria', value: 220 }
+// Current view state
+let currentView = 'world';
+let selectedCountry = null;
+
+// Hierarchical data with countries and states/provinces
+const countryData = [
+    { name: 'United States', value: 2890, type: 'country' },
+    { name: 'Brazil', value: 1350, type: 'country' },
+    { name: 'China', value: 5650, type: 'country' },
+    { name: 'India', value: 3200, type: 'country' },
+    { name: 'Russia', value: 1890, type: 'country' },
+    { name: 'Canada', value: 780, type: 'country' },
+    { name: 'Australia', value: 920, type: 'country' },
+    { name: 'Germany', value: 1560, type: 'country' },
+    { name: 'France', value: 1240, type: 'country' },
+    { name: 'United Kingdom', value: 1100, type: 'country' },
+    { name: 'Japan', value: 2100, type: 'country' },
+    { name: 'South Korea', value: 980, type: 'country' },
+    { name: 'Mexico', value: 670, type: 'country' },
+    { name: 'Indonesia', value: 890, type: 'country' },
+    { name: 'Saudi Arabia', value: 450, type: 'country' },
+    { name: 'South Africa', value: 340, type: 'country' },
+    { name: 'Egypt', value: 280, type: 'country' },
+    { name: 'Nigeria', value: 220, type: 'country' }
 ];
 
-// Fetch and register world map
-fetch('/libs/echarts/data/world.json')
-    .then(response => response.json())
-    .then(worldJson => {
-        echarts.registerMap('world', worldJson);
-        
-        const option = {
-            title: {
-                text: 'Global Data Distribution',
-                subtext: 'Geographic Heatmap',
-                left: 'center',
-                textStyle: {
-                    fontSize: 20,
-                    fontWeight: 'bold',
-                    color: '#333'
-                }
+// State/Province level data
+const stateData = [
+    // United States - States
+    { name: 'California', country: 'United States', value: 520, type: 'state' },
+    { name: 'Texas', country: 'United States', value: 380, type: 'state' },
+    { name: 'New York', country: 'United States', value: 340, type: 'state' },
+    { name: 'Florida', country: 'United States', value: 290, type: 'state' },
+    { name: 'Illinois', country: 'United States', value: 210, type: 'state' },
+    { name: 'Pennsylvania', country: 'United States', value: 195, type: 'state' },
+    { name: 'Ohio', country: 'United States', value: 175, type: 'state' },
+    { name: 'Georgia', country: 'United States', value: 165, type: 'state' },
+    { name: 'North Carolina', country: 'United States', value: 155, type: 'state' },
+    { name: 'Michigan', country: 'United States', value: 145, type: 'state' },
+    { name: 'Washington', country: 'United States', value: 135, type: 'state' },
+    { name: 'Arizona', country: 'United States', value: 120, type: 'state' },
+    
+    // India - States
+    { name: 'Maharashtra', country: 'India', value: 485, type: 'state' },
+    { name: 'Karnataka', country: 'India', value: 420, type: 'state' },
+    { name: 'Tamil Nadu', country: 'India', value: 390, type: 'state' },
+    { name: 'Uttar Pradesh', country: 'India', value: 360, type: 'state' },
+    { name: 'Gujarat', country: 'India', value: 340, type: 'state' },
+    { name: 'West Bengal', country: 'India', value: 310, type: 'state' },
+    { name: 'Telangana', country: 'India', value: 285, type: 'state' },
+    { name: 'Rajasthan', country: 'India', value: 240, type: 'state' },
+    { name: 'Kerala', country: 'India', value: 195, type: 'state' },
+    { name: 'Haryana', country: 'India', value: 175, type: 'state' },
+    
+    // China - Provinces
+    { name: 'Guangdong', country: 'China', value: 820, type: 'state' },
+    { name: 'Jiangsu', country: 'China', value: 745, type: 'state' },
+    { name: 'Shandong', country: 'China', value: 680, type: 'state' },
+    { name: 'Zhejiang', country: 'China', value: 625, type: 'state' },
+    { name: 'Henan', country: 'China', value: 570, type: 'state' },
+    { name: 'Sichuan', country: 'China', value: 520, type: 'state' },
+    { name: 'Hubei', country: 'China', value: 485, type: 'state' },
+    { name: 'Fujian', country: 'China', value: 440, type: 'state' },
+    { name: 'Shanghai', country: 'China', value: 395, type: 'state' },
+    { name: 'Beijing', country: 'China', value: 370, type: 'state' },
+    
+    // Brazil - States
+    { name: 'São Paulo', country: 'Brazil', value: 340, type: 'state' },
+    { name: 'Rio de Janeiro', country: 'Brazil', value: 245, type: 'state' },
+    { name: 'Minas Gerais', country: 'Brazil', value: 195, type: 'state' },
+    { name: 'Rio Grande do Sul', country: 'Brazil', value: 165, type: 'state' },
+    { name: 'Paraná', country: 'Brazil', value: 145, type: 'state' },
+    { name: 'Bahia', country: 'Brazil', value: 125, type: 'state' },
+    { name: 'Pernambuco', country: 'Brazil', value: 85, type: 'state' },
+    { name: 'Ceará', country: 'Brazil', value: 50, type: 'state' },
+    
+    // Canada - Provinces
+    { name: 'Ontario', country: 'Canada', value: 245, type: 'state' },
+    { name: 'Quebec', country: 'Canada', value: 185, type: 'state' },
+    { name: 'British Columbia', country: 'Canada', value: 145, type: 'state' },
+    { name: 'Alberta', country: 'Canada', value: 125, type: 'state' },
+    { name: 'Manitoba', country: 'Canada', value: 35, type: 'state' },
+    { name: 'Saskatchewan', country: 'Canada', value: 25, type: 'state' },
+    { name: 'Nova Scotia', country: 'Canada', value: 20, type: 'state' },
+    
+    // Australia - States
+    { name: 'New South Wales', country: 'Australia', value: 285, type: 'state' },
+    { name: 'Victoria', country: 'Australia', value: 240, type: 'state' },
+    { name: 'Queensland', country: 'Australia', value: 195, type: 'state' },
+    { name: 'Western Australia', country: 'Australia', value: 115, type: 'state' },
+    { name: 'South Australia', country: 'Australia', value: 55, type: 'state' },
+    { name: 'Tasmania', country: 'Australia', value: 20, type: 'state' },
+    { name: 'Northern Territory', country: 'Australia', value: 10, type: 'state' },
+    
+    // Germany - States
+    { name: 'Bavaria', country: 'Germany', value: 285, type: 'state' },
+    { name: 'North Rhine-Westphalia', country: 'Germany', value: 340, type: 'state' },
+    { name: 'Baden-Württemberg', country: 'Germany', value: 245, type: 'state' },
+    { name: 'Lower Saxony', country: 'Germany', value: 165, type: 'state' },
+    { name: 'Hesse', country: 'Germany', value: 145, type: 'state' },
+    { name: 'Saxony', country: 'Germany', value: 95, type: 'state' },
+    { name: 'Berlin', country: 'Germany', value: 85, type: 'state' },
+    
+    // Japan - Prefectures
+    { name: 'Tokyo', country: 'Japan', value: 485, type: 'state' },
+    { name: 'Osaka', country: 'Japan', value: 340, type: 'state' },
+    { name: 'Kanagawa', country: 'Japan', value: 285, type: 'state' },
+    { name: 'Aichi', country: 'Japan', value: 245, type: 'state' },
+    { name: 'Hokkaido', country: 'Japan', value: 195, type: 'state' },
+    { name: 'Fukuoka', country: 'Japan', value: 165, type: 'state' },
+    { name: 'Hyogo', country: 'Japan', value: 145, type: 'state' },
+    { name: 'Saitama', country: 'Japan', value: 125, type: 'state' },
+    { name: 'Chiba', country: 'Japan', value: 115, type: 'state' }
+];
+
+// Countries with available state/province data
+const countriesWithDrilldown = [
+    'United States', 'India', 'China', 'Brazil', 
+    'Canada', 'Australia', 'Germany', 'Japan'
+];
+
+// Map file paths for each country
+// Note: Country GeoJSON files can be obtained from:
+// - https://github.com/apache/echarts/tree/master/test/data/map/json
+// - https://github.com/deldersveld/topojson (convert TopoJSON to GeoJSON)
+// - Natural Earth Data: https://www.naturalearthdata.com/
+const countryMapPaths = {
+    'United States': '/libs/echarts/data/USA.json',
+    'China': '/libs/echarts/data/China.json',
+    'India': '/libs/echarts/data/India.json',
+    'Brazil': '/libs/echarts/data/Brazil.json',
+    'Canada': '/libs/echarts/data/Canada.json',
+    'Australia': '/libs/echarts/data/Australia.json',
+    'Germany': '/libs/echarts/data/Germany.json',
+    'Japan': '/libs/echarts/data/Japan.json'
+};
+
+// Helper function to get state data for a country
+function getStateDataForCountry(countryName) {
+    return stateData.filter(state => state.country === countryName);
+}
+
+// Create back button
+function createBackButton() {
+    const backBtn = document.createElement('button');
+    backBtn.id = 'backBtn';
+    backBtn.innerHTML = '← Back to World View';
+    backBtn.style.cssText = \`
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        padding: 8px 16px;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        transition: all 0.2s;
+    \`;
+    backBtn.onmouseover = () => {
+        backBtn.style.background = '#7c3aed';
+        backBtn.style.transform = 'translateY(-1px)';
+    };
+    backBtn.onmouseout = () => {
+        backBtn.style.background = '#8b5cf6';
+        backBtn.style.transform = 'translateY(0)';
+    };
+    backBtn.onclick = () => {
+        showWorldView();
+    };
+    document.getElementById('chart').parentElement.style.position = 'relative';
+    document.getElementById('chart').parentElement.appendChild(backBtn);
+}
+
+// Remove back button
+function removeBackButton() {
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.remove();
+    }
+}
+
+// Show world view
+function showWorldView() {
+    currentView = 'world';
+    selectedCountry = null;
+    removeBackButton();
+    
+    const option = {
+        title: {
+            text: 'Global Data Distribution',
+            subtext: 'Click on a country to drill down',
+            left: 'center',
+            textStyle: {
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: '#333'
             },
-            tooltip: {
-                trigger: 'item',
-                formatter: function(params) {
-                    return params.name + '<br/>Value: ' + (params.value || 'No data');
-                }
+            subtextStyle: {
+                color: '#666',
+                fontSize: 12
+            }
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                const hasData = countriesWithDrilldown.includes(params.name);
+                const suffix = hasData ? '<br/><i style="color: #8b5cf6;">Click to drill down</i>' : '';
+                return params.name + '<br/>Value: ' + (params.value || 'No data') + suffix;
+            }
+        },
+        visualMap: {
+            min: 0,
+            max: 6000,
+            text: ['High', 'Low'],
+            realtime: false,
+            calculable: true,
+            inRange: {
+                color: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0284c7', '#0369a1', '#075985']
             },
-            visualMap: {
-                min: 0,
-                max: 6000,
-                text: ['High', 'Low'],
-                realtime: false,
-                calculable: true,
-                inRange: {
-                    color: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0284c7', '#0369a1', '#075985']
+            textStyle: {
+                color: '#333'
+            }
+        },
+        series: [
+            {
+                name: 'World Data',
+                type: 'map',
+                map: 'world',
+                roam: true,
+                emphasis: {
+                    label: {
+                        show: true
+                    },
+                    itemStyle: {
+                        areaColor: '#8b5cf6',
+                        borderColor: '#6d28d9'
+                    }
                 },
-                textStyle: {
-                    color: '#333'
-                }
-            },
-            series: [
-                {
-                    name: 'World Data',
+                select: {
+                    label: {
+                        show: true
+                    },
+                    itemStyle: {
+                        areaColor: '#a78bfa'
+                    }
+                },
+                itemStyle: {
+                    borderColor: '#fff',
+                    borderWidth: 0.5
+                },
+                data: countryData
+            }
+        ]
+    };
+    
+    myChart.setOption(option, true);
+}
+
+// Show country drill-down view
+function showCountryView(countryName) {
+    currentView = 'country';
+    selectedCountry = countryName;
+    createBackButton();
+    
+    const countryStates = getStateDataForCountry(countryName);
+    const maxValue = Math.max(...countryStates.map(s => s.value));
+    const mapPath = countryMapPaths[countryName];
+    const mapName = countryName.replace(/\s+/g, '');
+    
+    // Try to load country map, fallback to bar chart if not available
+    fetch(mapPath)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Map not found');
+            }
+            return response.json();
+        })
+        .then(mapJson => {
+            // Register the country map
+            echarts.registerMap(mapName, mapJson);
+            
+            // Create map visualization
+            const option = {
+                title: {
+                    text: countryName + ' - State/Province Data',
+                    subtext: 'Geographic distribution',
+                    left: 'center',
+                    textStyle: {
+                        fontSize: 20,
+                        fontWeight: 'bold',
+                        color: '#333'
+                    },
+                    subtextStyle: {
+                        color: '#666',
+                        fontSize: 12
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return params.name + '<br/>Value: ' + (params.value || 'No data');
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: maxValue,
+                    text: ['High', 'Low'],
+                    realtime: false,
+                    calculable: true,
+                    inRange: {
+                        color: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0284c7', '#0369a1', '#075985']
+                    },
+                    textStyle: {
+                        color: '#333'
+                    }
+                },
+                series: [{
+                    name: countryName,
                     type: 'map',
-                    map: 'world',
+                    map: mapName,
                     roam: true,
                     emphasis: {
                         label: {
@@ -442,15 +704,109 @@ fetch('/libs/echarts/data/world.json')
                     },
                     itemStyle: {
                         borderColor: '#fff',
-                        borderWidth: 0.5
+                        borderWidth: 1
                     },
-                    data: data
+                    data: countryStates
+                }]
+            };
+            
+            myChart.setOption(option, true);
+        })
+        .catch(error => {
+            console.warn('Country map not available, showing bar chart:', error);
+            // Fallback to bar chart
+            const option = {
+                title: {
+                    text: countryName + ' - State/Province Data',
+                    subtext: 'Detailed breakdown by region',
+                    left: 'center',
+                    textStyle: {
+                        fontSize: 20,
+                        fontWeight: 'bold',
+                        color: '#333'
+                    },
+                    subtextStyle: {
+                        color: '#666',
+                        fontSize: 12
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>Value: ' + params[0].value;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: countryStates.map(s => s.name),
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45,
+                        fontSize: 10
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Value'
+                },
+                visualMap: {
+                    min: 0,
+                    max: maxValue,
+                    text: ['High', 'Low'],
+                    calculable: true,
+                    inRange: {
+                        color: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0284c7', '#0369a1', '#075985']
+                    },
+                    textStyle: {
+                        color: '#333'
+                    }
+                },
+                series: [{
+                    type: 'bar',
+                    data: countryStates.map(s => s.value),
+                    itemStyle: {
+                        borderRadius: [4, 4, 0, 0]
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(139, 92, 246, 0.5)'
+                        }
+                    }
+                }]
+            };
+            
+            myChart.setOption(option, true);
+        });
+}
+
+// Initialize world view
+fetch('/libs/echarts/data/world.json')
+    .then(response => response.json())
+    .then(worldJson => {
+        echarts.registerMap('world', worldJson);
+        showWorldView();
+        
+        // Add click event for drill-down
+        myChart.on('click', function(params) {
+            if (currentView === 'world' && params.componentType === 'series') {
+                const countryName = params.name;
+                if (countriesWithDrilldown.includes(countryName)) {
+                    showCountryView(countryName);
                 }
-            ]
-        };
-
-        myChart.setOption(option);
-
+            }
+        });
+        
         window.addEventListener('resize', () => {
             myChart.resize();
         });
