@@ -298,7 +298,7 @@ export const DenebTemplateLoader: React.FC<DenebTemplateLoaderProps> = ({
           <ul className="list-disc pl-5 space-y-1 text-xs">
             <li><code>name</code> - Template name (required)</li>
             <li><code>description</code> - Template description (optional)</li>
-            <li><code>vegaLite</code> or <code>template</code> - Vega-Lite specification (required)</li>
+            <li><code>vegaLite</code>, <code>vega</code>, or <code>template</code> - Vega or Vega-Lite specification (required)</li>
             <li><code>metadata</code> - Author, license, tags (optional)</li>
             <li><code>dataConfig</code> - Data binding configuration (optional)</li>
             <li><code>parameters</code> - Customizable parameters (optional)</li>

@@ -142,7 +142,7 @@ export const DenebTemplateViewer: React.FC<DenebTemplateViewerProps> = ({
                 className="bg-muted p-4 rounded overflow-auto max-h-96 text-xs"
                 style={{ fontFamily: 'monospace' }}
               >
-                {JSON.stringify(template.vegaLite || template.template, null, 2)}
+                {JSON.stringify(template.vegaLite || template.vega || template.template, null, 2)}
               </pre>
             </CardContent>
           </Card>
