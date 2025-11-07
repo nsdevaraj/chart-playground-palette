@@ -25,15 +25,24 @@ import {
 import { toast } from "sonner";
 import DenebTemplateViewer from "@/components/deneb/DenebTemplateViewer";
 import DenebTemplateLoader from "@/components/deneb/DenebTemplateLoader";
+import MermaidTemplateViewer from "@/components/mermaid/MermaidTemplateViewer";
+import MermaidTemplateLoader from "@/components/mermaid/MermaidTemplateLoader";
 import { CSVDataMapper } from "@/components/csv";
 import { useDenebTemplate } from "@/hooks/useDenebTemplate";
 import { denebTemplateMap, denebTemplates, type DenebTemplateGalleryItem } from "@/data/denebTemplates";
+import { mermaidTemplateMap, mermaidTemplates, type MermaidTemplateGalleryItem } from "@/data/mermaidTemplates";
 import type { DenebTemplate } from "@/lib/deneb/types";
+import type { MermaidTemplate } from "@/lib/mermaid/types";
 
 type DenebDataRow = Record<string, unknown>;
 
 interface DenebTemplateWorkspaceProps {
   entry: DenebTemplateGalleryItem;
+  invalidTemplateId: string | null;
+}
+
+interface MermaidTemplateWorkspaceProps {
+  entry: MermaidTemplateGalleryItem;
   invalidTemplateId: string | null;
 }
 
@@ -1027,7 +1036,9 @@ const Editor = () => {
   const templateId = searchParams.get("template");
   const templateType = searchParams.get("type");
   const denebEntry = templateId ? denebTemplateMap[templateId] ?? null : null;
+  const mermaidEntry = templateId ? mermaidTemplateMap[templateId] ?? null : null;
   const isDenebTemplate = templateType === "deneb" || Boolean(denebEntry);
+  const isMermaidTemplate = templateType === "mermaid" || Boolean(mermaidEntry);
 
   if (isDenebTemplate) {
     const entry = denebEntry ?? denebTemplates[0];
@@ -1035,6 +1046,19 @@ const Editor = () => {
 
     return (
       <DenebTemplateWorkspace
+        key={entry.id}
+        entry={entry}
+        invalidTemplateId={invalidTemplateId}
+      />
+    );
+  }
+
+  if (isMermaidTemplate) {
+    const entry = mermaidEntry ?? mermaidTemplates[0];
+    const invalidTemplateId = templateId && !mermaidEntry ? templateId : null;
+
+    return (
+      <MermaidTemplateWorkspace
         key={entry.id}
         entry={entry}
         invalidTemplateId={invalidTemplateId}
@@ -1597,6 +1621,234 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateWorkspaceProps) {
+  const [template, setTemplate] = useState(entry.template);
+  const [iframeKey, setIframeKey] = useState(0);
+
+  const headerTitle = template.name;
+  const headerDescription = template.description || "Edit this Mermaid diagram";
+  const headerTags = template.metadata?.tags || [];
+
+  const handleTemplateSave = () => {
+    setIframeKey((prev) => prev + 1);
+    toast.success("Diagram saved successfully!");
+  };
+
+  const handleDiagramChange = (newDiagram: string) => {
+    setTemplate((prev) => ({
+      ...prev,
+      diagram: newDiagram,
+    }));
+  };
+
+  const handleTemplateLoaded = (loadedTemplate: MermaidTemplate) => {
+    setTemplate(loadedTemplate);
+    toast.success("Template loaded successfully!");
+  };
+
+  const handleDownload = () => {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${template.name}</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 90%;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .mermaid { display: flex; justify-content: center; }
+        svg { max-width: 100%; height: auto; }
+    </style>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    <\/script>
+</head>
+<body>
+    <div class="container">
+        <div class="title">${template.name}</div>
+        <div class="mermaid">${template.diagram}</div>
+    </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${template.name.replace(/\s+/g, "-").toLowerCase()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Diagram downloaded successfully!");
+  };
+
+  const handleCopyDiagram = () => {
+    navigator.clipboard.writeText(template.diagram);
+    toast.success("Diagram syntax copied to clipboard!");
+  };
+
+  const handleResetTemplate = () => {
+    setTemplate(entry.template);
+    setIframeKey((prev) => prev + 1);
+    toast.success("Template reset to gallery version");
+  };
+
+  const previewHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${template.name}</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
+    <style>
+        body { margin: 0; padding: 20px; background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100%; }
+        .mermaid { display: flex; align-items: center; justify-content: center; background: white; border-radius: 8px; padding: 20px; }
+        svg { max-width: 100%; height: auto; }
+    </style>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    <\/script>
+</head>
+<body>
+    <div class="mermaid">${template.diagram}</div>
+</body>
+</html>`;
+
+  return (
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="space-y-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">Mermaid</Badge>
+            <h1 className="text-3xl font-semibold">{headerTitle}</h1>
+          </div>
+          <p className="text-muted-foreground mt-2 max-w-3xl">{headerDescription}</p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {headerTags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {invalidTemplateId && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Template "{invalidTemplateId}" was not found in the gallery. Showing the first Mermaid example instead.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Diagram Controls</CardTitle>
+              <CardDescription>Edit, validate, or reset the Mermaid diagram.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" className="glow-primary" onClick={handleTemplateSave}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleCopyDiagram}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleResetTemplate}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                {template.metadata?.author && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Author</p>
+                    <p>{template.metadata.author}</p>
+                  </div>
+                )}
+                {template.metadata?.license && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">License</p>
+                    <p>{template.metadata.license}</p>
+                  </div>
+                )}
+                {template.version && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Version</p>
+                    <p>{template.version}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <MermaidTemplateLoader onTemplateLoad={handleTemplateLoaded} />
+        </div>
+
+        <div className="space-y-4">
+          <Card className="flex flex-col h-full">
+            <CardHeader>
+              <CardTitle>Preview</CardTitle>
+              <CardDescription>Live preview of your Mermaid diagram</CardDescription>
+            </CardHeader>
+
+            <CardContent className="flex-1">
+              <div className="w-full h-96 border border-border rounded-lg overflow-hidden bg-white">
+                <iframe
+                  key={iframeKey}
+                  className="w-full h-full"
+                  sandbox="allow-scripts allow-same-origin"
+                  title="Mermaid Preview"
+                  srcDoc={previewHtml}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <MermaidTemplateViewer
+            template={template}
+            onDiagramChange={handleDiagramChange}
+            editable={true}
+          />
+        </div>
+      </div>
     </div>
   );
 }
