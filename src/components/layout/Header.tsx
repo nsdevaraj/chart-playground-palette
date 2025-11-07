@@ -8,10 +8,6 @@ const Header = () => {
     href: "/",
     icon: Home
   }, {
-    name: "Templates",
-    href: "/gallery",
-    icon: FileText
-  }, {
     name: "Editor",
     href: "/editor",
     icon: Code2
