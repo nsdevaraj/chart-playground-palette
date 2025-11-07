@@ -504,12 +504,9 @@ const Editor = () => {
   }, [html, css, js]);
 
   const copyIframeCode = () => {
-    const styleTag = `<style>${css}</style></head>`;
-    const scriptTag = `<script>${js}<\/script></body>`;
-    
     const fullCode = html
-      .replace('</head>', styleTag)
-      .replace('</body>', scriptTag);
+      .replace('</head>', () => `<style>${css}</style></head>`)
+      .replace('</body>', () => `<script>${js}<\/script></body>`);
 
     const iframeCode = `<iframe 
   srcdoc="${fullCode.replace(/"/g, '&quot;')}" 
@@ -524,12 +521,9 @@ const Editor = () => {
   };
 
   const downloadCode = () => {
-    const styleTag = `<style>${css}</style></head>`;
-    const scriptTag = `<script>${js}<\/script></body>`;
-    
     const fullCode = html
-      .replace('</head>', styleTag)
-      .replace('</body>', scriptTag);
+      .replace('</head>', () => `<style>${css}</style></head>`)
+      .replace('</body>', () => `<script>${js}<\/script></body>`);
 
     const blob = new Blob([fullCode], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
