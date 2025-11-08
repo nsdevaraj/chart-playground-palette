@@ -22,6 +22,11 @@ import { CSVDataMapper } from "@/components/csv";
 import { CSVParseResult, detectSchema } from "@/lib/csv";
 import { denebTemplates, type DenebTemplateGalleryItem } from "@/data/denebTemplates";
 import { mermaidTemplates, type MermaidTemplateGalleryItem } from "@/data/mermaidTemplates";
+import { highchartsTemplates, type HighchartsTemplateGalleryItem } from "@/data/highchartsTemplates";
+import { echartsTemplates, type EchartsTemplateGalleryItem } from "@/data/echartsTemplates";
+import { aggridTemplates, type AggridTemplateGalleryItem } from "@/data/aggridTemplates";
+import { d3Templates, type D3TemplateGalleryItem } from "@/data/d3Templates";
+import { plotlyTemplates, type PlotlyTemplateGalleryItem } from "@/data/plotlyTemplates";
 import type { DenebTemplate } from "@/lib/deneb/types";
 import type { MermaidTemplate } from "@/lib/mermaid/types";
 
@@ -32,7 +37,7 @@ interface Provider {
   name: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  templates: Array<DenebTemplateGalleryItem | MermaidTemplateGalleryItem>;
+  templates: Array<DenebTemplateGalleryItem | MermaidTemplateGalleryItem | HighchartsTemplateGalleryItem | EchartsTemplateGalleryItem | AggridTemplateGalleryItem | D3TemplateGalleryItem | PlotlyTemplateGalleryItem>;
 }
 
 const providers: Provider[] = [
@@ -49,6 +54,41 @@ const providers: Provider[] = [
     description: 'Diagram and chart generation from text',
     icon: BarChart3,
     templates: mermaidTemplates
+  },
+  {
+    id: 'highcharts',
+    name: 'Highcharts',
+    description: 'Interactive JavaScript charts and visualizations',
+    icon: BarChart3,
+    templates: highchartsTemplates
+  },
+  {
+    id: 'echarts',
+    name: 'ECharts',
+    description: 'Powerful and interactive charting library',
+    icon: BarChart3,
+    templates: echartsTemplates
+  },
+  {
+    id: 'aggrid',
+    name: 'AG Grid',
+    description: 'Enterprise data tables and grids',
+    icon: BarChart3,
+    templates: aggridTemplates
+  },
+  {
+    id: 'd3',
+    name: 'D3',
+    description: 'Data-driven documents with advanced visualizations',
+    icon: BarChart3,
+    templates: d3Templates
+  },
+  {
+    id: 'plotly',
+    name: 'Plotly',
+    description: 'Interactive graphing library with statistical charts',
+    icon: BarChart3,
+    templates: plotlyTemplates
   }
 ];
 
@@ -131,6 +171,16 @@ const CSVWorkflow = () => {
       return `/editor?type=deneb&id=${selectedTemplate}`;
     } else if (selectedProvider === 'mermaid') {
       return `/editor?type=mermaid&id=${selectedTemplate}`;
+    } else if (selectedProvider === 'highcharts') {
+      return `/editor?type=highcharts&id=${selectedTemplate}`;
+    } else if (selectedProvider === 'echarts') {
+      return `/editor?type=echarts&id=${selectedTemplate}`;
+    } else if (selectedProvider === 'aggrid') {
+      return `/editor?type=aggrid&id=${selectedTemplate}`;
+    } else if (selectedProvider === 'd3') {
+      return `/editor?type=d3&id=${selectedTemplate}`;
+    } else if (selectedProvider === 'plotly') {
+      return `/editor?type=plotly&id=${selectedTemplate}`;
     }
     return '/editor';
   };
@@ -270,41 +320,40 @@ const CSVWorkflow = () => {
         );
 
       case 'mapping':
-        return currentTemplate && parseResult && selectedProvider === 'deneb' ? (
-          <CSVDataMapper
-            template={currentTemplate.template as DenebTemplate}
-            onDataMapped={handleMappingComplete}
-            onError={(error) => toast.error(error)}
-          />
-        ) : currentTemplate && selectedProvider === 'mermaid' ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Mermaid Template Selected</CardTitle>
-              <CardDescription>
-                Mermaid diagrams use text-based syntax and don't require CSV data mapping. 
-                You can proceed directly to create your diagram.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">Template: {currentTemplate.title}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">{currentTemplate.description}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {currentTemplate.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <Button onClick={() => handleMappingComplete([])} className="w-full">
-                  Continue to Editor
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null;
+         return currentTemplate && parseResult && selectedProvider === 'deneb' ? (
+           <CSVDataMapper
+             template={currentTemplate.template as DenebTemplate}
+             onDataMapped={handleMappingComplete}
+             onError={(error) => toast.error(error)}
+           />
+         ) : currentTemplate ? (
+           <Card>
+             <CardHeader>
+               <CardTitle>{currentTemplate.title} Template Selected</CardTitle>
+               <CardDescription>
+                 Your {currentProvider?.name} template is ready. You can proceed to configure and customize it in the editor.
+               </CardDescription>
+             </CardHeader>
+             <CardContent>
+               <div className="space-y-4">
+                 <div className="p-4 bg-muted rounded-lg">
+                   <h4 className="font-medium mb-2">Template: {currentTemplate.title}</h4>
+                   <p className="text-sm text-muted-foreground mb-2">{currentTemplate.description}</p>
+                   <div className="flex flex-wrap gap-1">
+                     {currentTemplate.tags.map((tag) => (
+                       <Badge key={tag} variant="secondary" className="text-xs">
+                         {tag}
+                       </Badge>
+                     ))}
+                   </div>
+                 </div>
+                 <Button onClick={() => handleMappingComplete([])} className="w-full">
+                   Continue to Editor
+                 </Button>
+               </div>
+             </CardContent>
+           </Card>
+         ) : null;
 
       case 'preview':
         return (
@@ -315,9 +364,9 @@ const CSVWorkflow = () => {
                 Ready to Create Visualization
               </CardTitle>
               <CardDescription>
-                {selectedProvider === 'deneb' 
+                {selectedProvider === 'deneb'
                   ? 'Your CSV data has been mapped and is ready for visualization'
-                  : 'Your Mermaid template is ready for editing'
+                  : `Your ${currentProvider?.name} template is ready for editing and customization`
                 }
               </CardDescription>
             </CardHeader>
@@ -347,7 +396,7 @@ const CSVWorkflow = () => {
                 <Link to={getEditorUrl()}>
                   <Button size="lg" className="glow-primary">
                     <Sparkles className="w-5 h-5 mr-2" />
-                    {selectedProvider === 'deneb' ? 'Create Visualization' : 'Edit Diagram'}
+                    {selectedProvider === 'deneb' ? 'Create Visualization' : `Open ${currentProvider?.name} Editor`}
                   </Button>
                 </Link>
               </div>
