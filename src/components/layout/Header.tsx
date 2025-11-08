@@ -1,12 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Code2, FileText, Home, Sparkles } from "lucide-react";
+import { BarChart3, Code2, FileText, Home, Sparkles, Upload } from "lucide-react";
 const Header = () => {
   const location = useLocation();
   const navigation = [{
     name: "Home",
     href: "/",
     icon: Home
+  }, {
+    name: "CSV Workflow",
+    href: "/csv-workflow",
+    icon: Upload
   }, {
     name: "Editor",
     href: "/editor",

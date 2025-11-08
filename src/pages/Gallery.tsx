@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Code2, ExternalLink, Search, Zap } from "lucide-react";
+import { Code2, ExternalLink, Search, Zap, Upload, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { DenebTemplate } from "@/lib/deneb/types";
 import type { MermaidTemplate } from "@/lib/mermaid/types";
@@ -242,6 +242,29 @@ const Gallery = () => {
           Choose from multiple libraries and customize to your needs.
         </p>
       </div>
+
+      {/* CSV Workflow CTA */}
+      <Card className="mb-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5" />
+                Have CSV Data?
+              </h3>
+              <p className="text-muted-foreground">
+                Upload your CSV file and we'll help you map it to the perfect template
+              </p>
+            </div>
+            <Link to="/csv-workflow">
+              <Button size="lg" className="glow-primary">
+                <Upload className="w-4 h-4 mr-2" />
+                Start CSV Workflow
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
