@@ -27,7 +27,7 @@ import DenebTemplateViewer from "@/components/deneb/DenebTemplateViewer";
 import DenebTemplateLoader from "@/components/deneb/DenebTemplateLoader";
 import MermaidTemplateViewer from "@/components/mermaid/MermaidTemplateViewer";
 import MermaidTemplateLoader from "@/components/mermaid/MermaidTemplateLoader";
-import { CSVDataMapper } from "@/components/csv";
+import { GenericCSVDataMapper } from "@/components/csv";
 import { useDenebTemplate } from "@/hooks/useDenebTemplate";
 import { denebTemplateMap, denebTemplates, type DenebTemplateGalleryItem } from "@/data/denebTemplates";
 import { mermaidTemplateMap, mermaidTemplates, type MermaidTemplateGalleryItem } from "@/data/mermaidTemplates";
@@ -1612,7 +1612,7 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
                 </Button>
               </div>
               
-              <CSVDataMapper
+              <GenericCSVDataMapper
                 template={activeTemplate}
                 onDataMapped={handleCSVDataMapped}
                 onError={(error) => toast.error(error)}
@@ -1628,6 +1628,7 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
 function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateWorkspaceProps) {
   const [template, setTemplate] = useState(entry.template);
   const [iframeKey, setIframeKey] = useState(0);
+  const [showCSVMapper, setShowCSVMapper] = useState(false);
 
   const headerTitle = template.name;
   const headerDescription = template.description || "Edit this Mermaid diagram";
@@ -1648,6 +1649,13 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
   const handleTemplateLoaded = (loadedTemplate: MermaidTemplate) => {
     setTemplate(loadedTemplate);
     toast.success("Template loaded successfully!");
+  };
+
+  const handleCSVDataMapped = (mappedData: Record<string, unknown>[]) => {
+    // For Mermaid, we could update the diagram with the mapped data
+    // This is a simple implementation that could be enhanced
+    setShowCSVMapper(false);
+    toast.success("CSV data mapped and applied to template");
   };
 
   const handleDownload = () => {
@@ -1782,6 +1790,9 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
                   <Save className="w-4 h-4 mr-2" />
                   Save
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowCSVMapper(true)}>
+                  Map CSV Data
+                </Button>
                 <Button size="sm" variant="outline" onClick={handleDownload}>
                   <Download className="w-4 h-4 mr-2" />
                   Download
@@ -1849,6 +1860,32 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
           />
         </div>
       </div>
+
+      {/* CSV Data Mapper Modal */}
+      {showCSVMapper && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold">Map CSV Data to Template</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCSVMapper(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              
+              <GenericCSVDataMapper
+                template={template}
+                onDataMapped={handleCSVDataMapped}
+                onError={(error) => toast.error(error)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

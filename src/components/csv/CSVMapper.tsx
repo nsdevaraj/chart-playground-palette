@@ -1,8 +1,8 @@
 /**
- * CSV Mapper Component
+ * Generic CSV Mapper Component
  * 
- * Provides an interface for mapping CSV columns to Deneb template fields,
- * with suggestions and validation.
+ * Provides an interface for mapping CSV columns to template fields,
+ * with suggestions and validation for any template type.
  */
 
 import { useState, useEffect } from 'react';
@@ -24,20 +24,20 @@ import {
   EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { DenebTemplate } from '@/lib/deneb/types';
+import { GenericTemplate } from '@/lib/template';
 import { CSVParseResult, CSVSchema } from '@/lib/csv';
 import { 
   FieldMapping, 
-  extractTemplateFields, 
   createInitialMappings, 
   mapCSVData,
   validateMappingCompatibility,
   generateMappingSuggestions,
   DataTransform
-} from '@/lib/csv';
+} from '@/lib/csv/generic-mapper';
+import { extractTemplateFields } from '@/lib/template/registry';
 
 interface CSVMapperProps {
-  template: DenebTemplate;
+  template: GenericTemplate;
   csvParseResult: CSVParseResult;
   csvSchema: CSVSchema;
   onMappingChanged: (mappings: FieldMapping[], mappedData: Record<string, unknown>[]) => void;

@@ -2,20 +2,21 @@
  * CSV Data Mapper Module
  * 
  * Comprehensive CSV parsing, schema detection, and data mapping utilities
- * for integrating CSV data with Deneb templates.
+ * for integrating CSV data with any template type (Deneb, Mermaid, etc.).
  */
 
 export * from './parser';
 export * from './schema';
 export * from './mapper';
+export * from './generic-mapper';
 
 /**
  * Main CSV processing pipeline
  */
 import { parseCSV, CSVParseOptions, CSVParseResult } from './parser';
 import { detectSchema, CSVSchema } from './schema';
-import { mapCSVData, createInitialMappings, FieldMapping, validateMappingCompatibility } from './mapper';
-import { DenebTemplate } from '../deneb/types';
+import { mapCSVData, createInitialMappings, FieldMapping, validateMappingCompatibility } from './generic-mapper';
+import { GenericTemplate } from '../template';
 
 export interface CSVProcessingResult {
   parseResult: CSVParseResult;
@@ -30,11 +31,11 @@ export interface CSVProcessingResult {
 }
 
 /**
- * Complete CSV processing pipeline for Deneb templates
+ * Complete CSV processing pipeline for any template type
  */
 export const processCSVForTemplate = async (
   csvContent: string,
-  template: DenebTemplate,
+  template: GenericTemplate,
   options?: CSVParseOptions
 ): Promise<CSVProcessingResult> => {
   // Step 1: Parse CSV
