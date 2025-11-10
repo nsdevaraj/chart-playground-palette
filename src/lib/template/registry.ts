@@ -5,14 +5,15 @@
  * different template types.
  */
 
-import { TemplateDataProvider, TemplateField, GenericTemplate, TypedTemplate } from './template';
+import { TemplateDataProvider, TemplateField, GenericTemplate, TypedTemplate, TemplateType } from './index';
 import { createDenebTemplateProvider } from '../deneb/provider';
 import { createMermaidTemplateProvider } from '../mermaid/provider';
+import { createGenericTemplateProvider } from '../generic/provider';
 import { DenebTemplate } from '../deneb/types';
 import { MermaidTemplate } from '../mermaid/types';
 
 // Export providers for direct use
-export { createDenebTemplateProvider, createMermaidTemplateProvider };
+export { createDenebTemplateProvider, createMermaidTemplateProvider, createGenericTemplateProvider };
 export type { DenebTemplate, MermaidTemplate };
 
 /**
@@ -23,8 +24,10 @@ export class TemplateProviderRegistry {
 
   constructor() {
     // Register built-in providers
+    // Order matters: more specific providers first, generic last as fallback
     this.registerProvider('deneb', createDenebTemplateProvider());
     this.registerProvider('mermaid', createMermaidTemplateProvider());
+    this.registerProvider('generic', createGenericTemplateProvider());
   }
 
   /**
@@ -51,10 +54,10 @@ export class TemplateProviderRegistry {
   /**
    * Detect the type of a template
    */
-  detectTemplateType(template: GenericTemplate): string | null {
+  detectTemplateType(template: GenericTemplate): TemplateType | null {
     for (const [type, provider] of this.providers) {
       if (provider.supportsTemplate(template)) {
-        return type;
+        return type as TemplateType;
       }
     }
     return null;
@@ -93,8 +96,7 @@ export class TemplateProviderRegistry {
 
     return {
       ...template,
-      type: type as any,
-      template
+      type
     };
   }
 }
@@ -114,7 +116,7 @@ export const extractTemplateFields = (template: GenericTemplate): TemplateField[
 /**
  * Convenience function to detect template type
  */
-export const detectTemplateType = (template: GenericTemplate): string | null => {
+export const detectTemplateType = (template: GenericTemplate): TemplateType | null => {
   return templateRegistry.detectTemplateType(template);
 };
 
