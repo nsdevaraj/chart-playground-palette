@@ -7,6 +7,7 @@ export interface MermaidTemplateGalleryItem {
   category: string;
   tags: string[];
   template: MermaidTemplate;
+  sampleData?: Record<string, unknown>[] | Record<string, unknown>;
 }
 
 const flowchartTemplate: MermaidTemplate = {
@@ -30,6 +31,23 @@ const flowchartTemplate: MermaidTemplate = {
     theme: "default",
     securityLevel: "loose",
   },
+};
+
+const flowchartSampleData = {
+  steps: [
+    { id: "Start", type: "start", description: "Process begins" },
+    { id: "Check", type: "decision", description: "Is it working?" },
+    { id: "Success", type: "process", description: "Great!" },
+    { id: "Debug", type: "process", description: "Debug the issue" },
+    { id: "End", type: "end", description: "Process ends" }
+  ],
+  connections: [
+    { from: "Start", to: "Check", label: "" },
+    { from: "Check", to: "Success", label: "Yes" },
+    { from: "Check", to: "Debug", label: "No" },
+    { from: "Debug", to: "Check", label: "" },
+    { from: "Success", to: "End", label: "" }
+  ]
 };
 
 const sequenceDiagramTemplate: MermaidTemplate = {
@@ -333,6 +351,7 @@ export const mermaidTemplates: MermaidTemplateGalleryItem[] = [
     category: "Flowcharts",
     tags: ["process", "flowchart", "decision"],
     template: flowchartTemplate,
+    sampleData: flowchartSampleData,
   },
   {
     id: "mermaid-sequence",
