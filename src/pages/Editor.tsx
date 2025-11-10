@@ -1088,6 +1088,8 @@ function CodeTemplateWorkspace() {
       .replace("</body>", () => `<script>${initialTemplate.js}</script></body>`);
   });
   const [iframeKey, setIframeKey] = useState(0);
+  const [showCSVMapper, setShowCSVMapper] = useState(false);
+  const [csvData, setCsvData] = useState<Record<string, unknown>[] | null>(null);
 
   useEffect(() => {
     const templateId = searchParams.get("template");
@@ -1160,8 +1162,14 @@ function CodeTemplateWorkspace() {
     setHtml(template.html);
     setCss(template.css);
     setJs(template.js);
+    setCsvData(null);
     setIframeKey((prev) => prev + 1);
     toast.success("Code reset to template!");
+  };
+
+  const handleClearCSVData = () => {
+    setCsvData(null);
+    toast.success("CSV data cleared");
   };
 
   const getCurrentCode = () => {
@@ -1193,6 +1201,31 @@ function CodeTemplateWorkspace() {
     }
   };
 
+  const handleCSVDataMapped = (mappedData: Record<string, unknown>[]) => {
+    setCsvData(mappedData);
+    setShowCSVMapper(false);
+    
+    // Inject the CSV data into the JavaScript code
+    const dataString = JSON.stringify(mappedData, null, 2);
+    const newJs = `// CSV Data loaded\nconst csvData = ${dataString};\n\n${js}`;
+    setJs(newJs);
+    
+    toast.success(`CSV data with ${mappedData.length} rows mapped successfully!`);
+  };
+
+  // Create a generic template object for CSV mapper
+  const currentTemplate = useMemo(() => {
+    return {
+      name: initialTemplate.name,
+      version: '1.0.0',
+      description: `${initialTemplate.name} template for data visualization`,
+      metadata: {
+        name: initialTemplate.name,
+        tags: ['chart', 'visualization']
+      }
+    };
+  }, [initialTemplate.name]);
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
@@ -1209,6 +1242,20 @@ function CodeTemplateWorkspace() {
                     <Play className="w-4 h-4 mr-2" />
                     Run
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowCSVMapper(true)}>
+                    Map CSV Data
+                  </Button>
+                  {csvData && (
+                    <>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        {csvData.length} rows loaded
+                      </Badge>
+                      <Button size="sm" variant="ghost" onClick={handleClearCSVData} title="Clear CSV Data">
+                        ×
+                      </Button>
+                    </>
+                  )}
                   <Button size="sm" variant="outline" onClick={resetCode}>
                     <RotateCcw className="w-4 h-4" />
                   </Button>
@@ -1249,6 +1296,27 @@ function CodeTemplateWorkspace() {
                   />
                 </div>
               </Tabs>
+
+              {/* CSV Data Preview */}
+              {csvData && csvData.length > 0 && (
+                <Alert className="mt-4">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      <p className="font-medium">CSV Data Available</p>
+                      <p className="text-sm text-muted-foreground">
+                        {csvData.length} rows loaded. Access via <code className="bg-muted px-1 py-0.5 rounded">csvData</code> variable in your JavaScript code.
+                      </p>
+                      <details className="text-sm">
+                        <summary className="cursor-pointer hover:underline">View first row</summary>
+                        <pre className="mt-2 p-2 bg-muted rounded overflow-x-auto">
+                          {JSON.stringify(csvData[0], null, 2)}
+                        </pre>
+                      </details>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1293,6 +1361,32 @@ function CodeTemplateWorkspace() {
           </Card>
         </div>
       </div>
+
+      {/* CSV Data Mapper Modal */}
+      {showCSVMapper && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold">Map CSV Data to Chart Template</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCSVMapper(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              
+              <GenericCSVDataMapper
+                template={currentTemplate}
+                onDataMapped={handleCSVDataMapped}
+                onError={(error) => toast.error(error)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
