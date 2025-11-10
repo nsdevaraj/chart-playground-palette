@@ -325,6 +325,8 @@ const CSVWorkflow = () => {
              template={currentTemplate.template as DenebTemplate}
              onDataMapped={handleMappingComplete}
              onError={(error) => toast.error(error)}
+             initialCSVContent={csvContent}
+             initialParseResult={parseResult}
            />
          ) : currentTemplate ? (
            <Card>
@@ -377,7 +379,7 @@ const CSVWorkflow = () => {
                     <h4 className="font-medium">Data Summary</h4>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p>• {parseResult?.rowCount} rows of data</p>
-                      <p>• {parseResult?.columns.length} columns detected</p>
+                      <p>• {parseResult?.headers.length} columns detected</p>
                       <p>• Successfully mapped to template fields</p>
                     </div>
                   </div>
