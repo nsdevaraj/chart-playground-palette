@@ -5,7 +5,7 @@
  * functionality for integrating CSV data with Deneb templates.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -33,21 +33,39 @@ interface CSVDataMapperProps {
   onDataMapped: (mappedData: Record<string, unknown>[]) => void;
   onError?: (error: string) => void;
   className?: string;
+  /** Optional pre-loaded CSV content to skip the upload step */
+  initialCSVContent?: string;
+  /** Optional pre-loaded parse result to skip the upload step */
+  initialParseResult?: CSVParseResult;
 }
 
 export const CSVDataMapper: React.FC<CSVDataMapperProps> = ({
   template,
   onDataMapped,
   onError,
-  className
+  className,
+  initialCSVContent,
+  initialParseResult
 }) => {
-  const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
-  const [csvContent, setCsvContent] = useState('');
-  const [parseResult, setParseResult] = useState<CSVParseResult | null>(null);
+  const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>(
+    initialCSVContent && initialParseResult ? 'mapping' : 'upload'
+  );
+  const [csvContent, setCsvContent] = useState(initialCSVContent || '');
+  const [parseResult, setParseResult] = useState<CSVParseResult | null>(initialParseResult || null);
   const [schema, setSchema] = useState<CSVSchema | null>(null);
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
   const [mappedData, setMappedData] = useState<Record<string, unknown>[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Auto-detect schema when pre-loaded data is provided
+  useEffect(() => {
+    if (initialParseResult && !schema) {
+      import('@/lib/csv').then(({ detectSchema }) => {
+        const detectedSchema = detectSchema(initialParseResult);
+        setSchema(detectedSchema);
+      });
+    }
+  }, [initialParseResult, schema]);
 
   const handleCSVLoaded = (content: string, result: CSVParseResult) => {
     setCsvContent(content);
