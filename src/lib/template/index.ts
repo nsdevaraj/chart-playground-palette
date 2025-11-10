@@ -43,6 +43,7 @@ export interface GenericTemplate {
   description?: string;
   metadata?: TemplateMetadata;
   version?: string;
+  sampleData?: Record<string, unknown>[] | Record<string, unknown>;
 }
 
 /**

@@ -50,6 +50,12 @@ export const GenericCSVDataMapper: React.FC<GenericCSVDataMapperProps> = ({
   const [mappedData, setMappedData] = useState<Record<string, unknown>[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
+  // If template has sampleData, show a button to use it
+  const hasSampleData = template.sampleData && (
+    Array.isArray(template.sampleData) || 
+    (typeof template.sampleData === 'object' && template.sampleData !== null)
+  );
+
   const handleCSVLoaded = (content: string, result: CSVParseResult) => {
     setCsvContent(content);
     setParseResult(result);
@@ -78,6 +84,23 @@ export const GenericCSVDataMapper: React.FC<GenericCSVDataMapperProps> = ({
 
     onDataMapped(mappedData);
     toast.success(`Applied ${mappedData.length} rows of mapped data to template`);
+  };
+
+  const handleUseSampleData = () => {
+    if (!template.sampleData) return;
+    
+    let sampleDataArray: Record<string, unknown>[];
+    if (Array.isArray(template.sampleData)) {
+      sampleDataArray = template.sampleData;
+    } else if (typeof template.sampleData === 'object' && template.sampleData !== null) {
+      sampleDataArray = [template.sampleData];
+    } else {
+      return;
+    }
+    
+    setMappedData(sampleDataArray);
+    setStep('preview');
+    toast.success(`Using sample data with ${sampleDataArray.length} rows`);
   };
 
   const handleReset = () => {
@@ -203,10 +226,25 @@ export const GenericCSVDataMapper: React.FC<GenericCSVDataMapperProps> = ({
 
       {/* Step content */}
       {step === 'upload' && (
-        <CSVUploader
-          onCSVLoaded={handleCSVLoaded}
-          onError={onError}
-        />
+        <div className="space-y-4">
+          {hasSampleData && (
+            <Alert>
+              <Sparkles className="h-4 w-4" />
+              <AlertDescription>
+                <div className="flex items-center justify-between">
+                  <span>This template has sample data available.</span>
+                  <Button size="sm" variant="outline" onClick={handleUseSampleData}>
+                    Use Sample Data
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          <CSVUploader
+            onCSVLoaded={handleCSVLoaded}
+            onError={onError}
+          />
+        </div>
       )}
 
       {step === 'mapping' && parseResult && schema && (

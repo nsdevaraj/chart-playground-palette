@@ -71,9 +71,23 @@ const formatDataValue = (value: unknown): string => {
 };
 
 // Template definitions for different chart libraries
-const templates = {
+const templates: Record<string, {
+  name: string;
+  sampleData?: Record<string, unknown[]>;
+  html: string;
+  css: string;
+  js: string;
+}> = {
   1: { // Highcharts
     name: "Highcharts Line Chart",
+    sampleData: [
+      { month: "Jan", sales: 1000 },
+      { month: "Feb", sales: 1200 },
+      { month: "Mar", sales: 800 },
+      { month: "Apr", sales: 1500 },
+      { month: "May", sales: 2000 },
+      { month: "Jun", sales: 1800 }
+    ],
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -127,6 +141,15 @@ Highcharts.chart('chart', {
   },
   2: { // ECharts
     name: "ECharts Bar Chart",
+    sampleData: [
+      { day: "Mon", value: 120 },
+      { day: "Tue", value: 200 },
+      { day: "Wed", value: 150 },
+      { day: "Thu", value: 80 },
+      { day: "Fri", value: 70 },
+      { day: "Sat", value: 110 },
+      { day: "Sun", value: 130 }
+    ],
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -194,6 +217,16 @@ window.addEventListener('resize', () => {
   },
   3: { // AG-Grid
     name: "AG-Grid Data Table",
+    sampleData: [
+      { name: 'iPhone 13', price: 799, category: 'Electronics', stock: 25 },
+      { name: 'MacBook Pro', price: 1299, category: 'Electronics', stock: 10 },
+      { name: 'AirPods', price: 179, category: 'Electronics', stock: 50 },
+      { name: 'iPad Air', price: 599, category: 'Electronics', stock: 30 },
+      { name: 'Apple Watch', price: 399, category: 'Electronics', stock: 20 },
+      { name: 'Samsung Galaxy', price: 899, category: 'Electronics', stock: 15 },
+      { name: 'Dell XPS', price: 1499, category: 'Electronics', stock: 8 },
+      { name: 'Sony Headphones', price: 249, category: 'Electronics', stock: 35 }
+    ],
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -251,6 +284,14 @@ new agGrid.Grid(eGridDiv, gridOptions);`
   },
   4: { // D3.js
     name: "D3.js Interactive Chart",
+    sampleData: [
+      { name: 'A', value: 30 },
+      { name: 'B', value: 80 },
+      { name: 'C', value: 45 },
+      { name: 'D', value: 60 },
+      { name: 'E', value: 20 },
+      { name: 'F', value: 90 }
+    ],
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -335,6 +376,13 @@ svg.append("g")
   },
   5: { // Highcharts Financial Dashboard
     name: "Highcharts Financial Dashboard",
+    sampleData: [
+      { date: '2024-01-01', open: 100, high: 110, low: 95, close: 105 },
+      { date: '2024-01-02', open: 105, high: 115, low: 100, close: 110 },
+      { date: '2024-01-03', open: 110, high: 120, low: 105, close: 115 },
+      { date: '2024-01-04', open: 115, high: 118, low: 108, close: 112 },
+      { date: '2024-01-05', open: 112, high: 125, low: 110, close: 120 }
+    ],
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -390,6 +438,18 @@ Highcharts.stockChart('chart', {
   },
   6: { // ECharts Geo Heatmap
     name: "ECharts Geo Heatmap",
+    sampleData: [
+      { name: 'United States', value: 2890, type: 'country' },
+      { name: 'Brazil', value: 1350, type: 'country' },
+      { name: 'China', value: 5650, type: 'country' },
+      { name: 'India', value: 3200, type: 'country' },
+      { name: 'Russia', value: 1890, type: 'country' },
+      { name: 'Canada', value: 780, type: 'country' },
+      { name: 'Australia', value: 920, type: 'country' },
+      { name: 'Germany', value: 1560, type: 'country' },
+      { name: 'France', value: 1240, type: 'country' },
+      { name: 'United Kingdom', value: 1100, type: 'country' }
+    ],
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1172,6 +1232,21 @@ function CodeTemplateWorkspace() {
     toast.success("CSV data cleared");
   };
 
+  const handleBindSampleData = () => {
+    if (initialTemplate.sampleData) {
+      setCsvData(initialTemplate.sampleData);
+      
+      // Inject the sample data into the JavaScript code
+      const dataString = JSON.stringify(initialTemplate.sampleData, null, 2);
+      const newJs = `// Sample Data loaded\nconst sampleData = ${dataString};\n\n${js}`;
+      setJs(newJs);
+      
+      toast.success(`Sample data with ${initialTemplate.sampleData.length} rows bound to template`);
+    } else {
+      toast.error("No sample data available for this template");
+    }
+  };
+
   const getCurrentCode = () => {
     switch (activeTab) {
       case "html":
@@ -1222,9 +1297,10 @@ function CodeTemplateWorkspace() {
       metadata: {
         name: initialTemplate.name,
         tags: ['chart', 'visualization']
-      }
+      },
+      sampleData: initialTemplate.sampleData
     };
-  }, [initialTemplate.name]);
+  }, [initialTemplate.name, initialTemplate.sampleData]);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -1242,6 +1318,11 @@ function CodeTemplateWorkspace() {
                     <Play className="w-4 h-4 mr-2" />
                     Run
                   </Button>
+                  {initialTemplate.sampleData && (
+                    <Button size="sm" variant="outline" onClick={handleBindSampleData}>
+                      Bind Sample Data
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => setShowCSVMapper(true)}>
                     Map CSV Data
                   </Button>
@@ -1723,6 +1804,7 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
   const [template, setTemplate] = useState(entry.template);
   const [iframeKey, setIframeKey] = useState(0);
   const [showCSVMapper, setShowCSVMapper] = useState(false);
+  const [mappedData, setMappedData] = useState<Record<string, unknown>[] | null>(null);
 
   const headerTitle = template.name;
   const headerDescription = template.description || "Edit this Mermaid diagram";
@@ -1745,11 +1827,13 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
     toast.success("Template loaded successfully!");
   };
 
-  const handleCSVDataMapped = (mappedData: Record<string, unknown>[]) => {
-    // For Mermaid, we could update the diagram with the mapped data
-    // This is a simple implementation that could be enhanced
+  const handleCSVDataMapped = (data: Record<string, unknown>[]) => {
+    setMappedData(data);
     setShowCSVMapper(false);
-    toast.success("CSV data mapped and applied to template");
+    
+    // For Mermaid templates, we could update the diagram with the mapped data
+    // This is a simple implementation that could be enhanced
+    toast.success(`CSV data with ${data.length} rows mapped and applied to template`);
   };
 
   const handleDownload = () => {
@@ -1818,8 +1902,14 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
 
   const handleResetTemplate = () => {
     setTemplate(entry.template);
+    setMappedData(null);
     setIframeKey((prev) => prev + 1);
     toast.success("Template reset to gallery version");
+  };
+
+  const handleClearData = () => {
+    setMappedData(null);
+    toast.success("Data cleared from template");
   };
 
   const previewHtml = `<!DOCTYPE html>
@@ -1884,9 +1974,22 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
                   <Save className="w-4 h-4 mr-2" />
                   Save
                 </Button>
+                {entry.sampleData && (
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setMappedData(Array.isArray(entry.sampleData) ? entry.sampleData : [entry.sampleData]);
+                    toast.success("Sample data bound to template");
+                  }}>
+                    Bind Sample Data
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={() => setShowCSVMapper(true)}>
                   Map CSV Data
                 </Button>
+                {mappedData && (
+                  <Button size="sm" variant="outline" onClick={handleClearData}>
+                    Clear Data
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={handleDownload}>
                   <Download className="w-4 h-4 mr-2" />
                   Download
@@ -1899,6 +2002,22 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Reset
                 </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {mappedData ? (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    {mappedData.length} {mappedData.length === 1 ? "row" : "rows"} bound
+                  </Badge>
+                ) : entry.sampleData ? (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    Sample data available
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">No data bound</Badge>
+                )}
               </div>
 
               <div className="space-y-3 text-sm">
@@ -1923,6 +2042,53 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
               </div>
             </CardContent>
           </Card>
+
+          {(mappedData || entry.sampleData) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Sample Data</CardTitle>
+                <CardDescription>Preview of the data currently bound to this template.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const dataRows = mappedData || (Array.isArray(entry.sampleData) ? entry.sampleData : entry.sampleData ? [entry.sampleData] : []);
+                  const dataColumns = dataRows.length > 0 ? Object.keys(dataRows[0]) : [];
+                  
+                  return dataRows.length > 0 ? (
+                    <>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            {dataColumns.map((column) => (
+                              <TableHead key={column} className="capitalize">
+                                {column.replace(/_/g, " ")}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {dataRows.slice(0, 8).map((row, index) => (
+                            <TableRow key={index}>
+                              {dataColumns.map((column) => (
+                                <TableCell key={column}>{formatDataValue(row[column])}</TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      {dataRows.length > 8 && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Showing first 8 of {dataRows.length} rows.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No data bound to this template yet.</p>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
 
           <MermaidTemplateLoader onTemplateLoad={handleTemplateLoaded} />
         </div>
