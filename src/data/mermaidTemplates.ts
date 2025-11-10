@@ -275,7 +275,8 @@ const gitGraphTemplate: MermaidTemplate = {
     license: "MIT",
   },
   diagramType: "gitGraph",
-  diagram: `gitGraph commit id: "Initial commit"
+  diagram: `gitGraph
+  commit id: "Initial commit"
   commit id: "Add feature"
   branch develop
   checkout develop
@@ -305,18 +306,20 @@ const requirementDiagramTemplate: MermaidTemplate = {
     license: "MIT",
   },
   diagramType: "requirement",
-  diagram: `requirement
-    req1: The system shall provide user login
-    req2: The system shall validate credentials
-    req3: The system shall store user data securely
-    req4: The system shall provide password recovery
-    elementImpl impl_req1, impl_req2
-    impl_req1: Database layer
-    impl_req2: Authentication service
-    impl_req1 - satisfies - req1
-    impl_req1 - satisfies - req3
-    impl_req2 - satisfies - req2
-    impl_req2 - satisfies - req4`,
+  diagram: `requirementDiagram
+
+    requirement test_req {
+    id: 1
+    text: the test text.
+    risk: high
+    verifymethod: test
+    }
+
+    element test_entity {
+    type: simulation
+    }
+
+    test_entity - satisfies -> test_req`,
   config: {
     theme: "default",
   },
