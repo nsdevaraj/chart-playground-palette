@@ -8,3 +8,4 @@ export { default as CSVUploader } from './CSVUploader';
 export { default as CSVMapper } from './CSVMapper';
 export { default as CSVPreview } from './CSVPreview';
 export { default as CSVDataMapper } from './CSVDataMapper';
+export { GenericCSVDataMapper } from './GenericCSVDataMapper';
