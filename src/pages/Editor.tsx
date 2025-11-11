@@ -1279,13 +1279,87 @@ function CodeTemplateWorkspace() {
     }
   };
 
+  // Function to automatically update template JavaScript to use CSV data
+  const updateTemplateToUseCSVData = (jsCode: string, csvData: Record<string, unknown>[]) => {
+    let updatedJs = jsCode;
+    
+    // Highcharts templates - more targeted replacements
+    if (updatedJs.includes('Highcharts.chart')) {
+      // Replace specific hardcoded categories with CSV data
+      updatedJs = updatedJs.replace(
+        /categories:\s*\[['"][^'"]*['"][^)]*?\]/g,
+        `categories: csvData.map(item => item.region)`
+      );
+      // Replace specific hardcoded data arrays
+      updatedJs = updatedJs.replace(
+        /data:\s*\[\d+(?:,\s*\d+)*\]/g,
+        `data: csvData.map(item => parseFloat(item.revenue))`
+      );
+    }
+    
+    // ECharts templates - more targeted approach
+    if (updatedJs.includes('echarts.init')) {
+      // Replace hardcoded weekday data with CSV regions
+      updatedJs = updatedJs.replace(
+        /data:\s*\[['"]Mon['"][^)]*?\]/g,
+        `data: csvData.map(item => item.region)`
+      );
+      // Replace hardcoded number arrays with CSV revenue data
+      updatedJs = updatedJs.replace(
+        /data:\s*\[\d+(?:,\s*\d+)*\]/g,
+        `data: csvData.map(item => parseFloat(item.revenue))`
+      );
+    }
+    
+    // D3.js templates - direct replacement
+    if (updatedJs.includes('d3.select')) {
+      // Replace hardcoded data array with CSV data
+      updatedJs = updatedJs.replace(
+        /const data = \[[^\]]*\];/g,
+        `const data = csvData;`
+      );
+    }
+    
+    // AG-Grid templates - direct replacement
+    if (updatedJs.includes('agGrid.Grid')) {
+      updatedJs = updatedJs.replace(
+        /const rowData = \[[^\]]*\];/g,
+        `const rowData = csvData;`
+      );
+    }
+    
+    // Plotly templates - targeted replacement
+    if (updatedJs.includes('Plotly.newPlot')) {
+      // Replace x arrays with CSV regions
+      updatedJs = updatedJs.replace(
+        /x:\s*\[\d+(?:,\s*\d+)*\]/g,
+        `x: csvData.map(item => item.region)`
+      );
+      // Replace y arrays with CSV revenue
+      updatedJs = updatedJs.replace(
+        /y:\s*\[\d+(?:,\s*\d+)*\]/g,
+        `y: csvData.map(item => parseFloat(item.revenue))`
+      );
+    }
+    
+    return updatedJs;
+  };
+
   const handleCSVDataMapped = (mappedData: Record<string, unknown>[]) => {
     setCsvData(mappedData);
     setShowCSVMapper(false);
     
     // Inject the CSV data into the JavaScript code
     const dataString = JSON.stringify(mappedData, null, 2);
-    const newJs = `// CSV Data loaded\nconst csvData = ${dataString};\n\n${js}`;
+    
+    // Remove any existing sampleData or csvData declarations to prevent redeclaration
+    let cleanedJs = js
+      .replace(/\/\/ (Sample Data|CSV Data) loaded\n(?:const|let) (sampleData|csvData) = [\s\S]*?;\n\n/g, '');
+    
+    // Automatically update templates to use csvData
+    cleanedJs = updateTemplateToUseCSVData(cleanedJs, mappedData);
+    
+    const newJs = `// CSV Data loaded\nlet csvData = ${dataString};\n\n${cleanedJs}`;
     setJs(newJs);
     
     toast.success(`CSV data with ${mappedData.length} rows mapped successfully!`);
