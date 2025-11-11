@@ -1280,34 +1280,58 @@ function CodeTemplateWorkspace() {
   };
 
   // Function to automatically update template JavaScript to use CSV data
-  const updateTemplateToUseCSVData = (jsCode: string, csvData: Record<string, unknown>[]) => {
+  const updateTemplateToUseCSVData = (jsCode: string, csvData: Record<string, unknown>[], columnNames?: string[]) => {
     let updatedJs = jsCode;
+    
+    // Get actual column names from the CSV data
+    const columns = columnNames || (csvData.length > 0 ? Object.keys(csvData[0]) : []);
+    
+    // Helper function to get the first string-like column for categories
+    const getCategoryColumn = () => {
+      const column = columns.find(col => {
+        const sample = csvData[0]?.[col];
+        return typeof sample === 'string' || (typeof sample !== 'number' && sample !== null);
+      });
+      return column || columns[0];
+    };
+    
+    // Helper function to get the first numeric column for values
+    const getValueColumn = () => {
+      const column = columns.find(col => {
+        const sample = csvData[0]?.[col];
+        return typeof sample === 'number' || !isNaN(Number(sample));
+      });
+      return column || columns[0];
+    };
+    
+    const categoryCol = getCategoryColumn();
+    const valueCol = getValueColumn();
     
     // Highcharts templates - more targeted replacements
     if (updatedJs.includes('Highcharts.chart')) {
-      // Replace specific hardcoded categories with CSV data
+      // Replace hardcoded categories arrays with actual column data
       updatedJs = updatedJs.replace(
-        /categories:\s*\[['"][^'"]*['"][^)]*?\]/g,
-        `categories: csvData.map(item => item.region)`
+        /categories:\s*\[(?:['"](?:[^'"\]]*)['"](?:,\s*)?)+\]/g,
+        `categories: csvData.map(item => item['${categoryCol}'])`
       );
-      // Replace specific hardcoded data arrays
+      // Replace hardcoded data arrays with actual numeric column
       updatedJs = updatedJs.replace(
-        /data:\s*\[\d+(?:,\s*\d+)*\]/g,
-        `data: csvData.map(item => parseFloat(item.revenue))`
+        /data:\s*\[(?:\d+(?:\.\d+)?(?:,\s*)?)+\]/g,
+        `data: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
     
     // ECharts templates - more targeted approach
     if (updatedJs.includes('echarts.init')) {
-      // Replace hardcoded weekday data with CSV regions
+      // Replace hardcoded string data arrays
       updatedJs = updatedJs.replace(
-        /data:\s*\[['"]Mon['"][^)]*?\]/g,
-        `data: csvData.map(item => item.region)`
+        /data:\s*\[(?:['"](?:[^'"\]]*)['"](?:,\s*)?)+\]/g,
+        `data: csvData.map(item => item['${categoryCol}'])`
       );
-      // Replace hardcoded number arrays with CSV revenue data
+      // Replace hardcoded number arrays
       updatedJs = updatedJs.replace(
-        /data:\s*\[\d+(?:,\s*\d+)*\]/g,
-        `data: csvData.map(item => parseFloat(item.revenue))`
+        /data:\s*\[(?:\d+(?:\.\d+)?(?:,\s*)?)+\]/g,
+        `data: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
     
@@ -1318,6 +1342,11 @@ function CodeTemplateWorkspace() {
         /const data = \[[^\]]*\];/g,
         `const data = csvData;`
       );
+      // Also handle let and var declarations
+      updatedJs = updatedJs.replace(
+        /(let|var) data = \[[^\]]*\];/g,
+        `$1 data = csvData;`
+      );
     }
     
     // AG-Grid templates - direct replacement
@@ -1326,19 +1355,41 @@ function CodeTemplateWorkspace() {
         /const rowData = \[[^\]]*\];/g,
         `const rowData = csvData;`
       );
+      updatedJs = updatedJs.replace(
+        /(let|var) rowData = \[[^\]]*\];/g,
+        `$1 rowData = csvData;`
+      );
     }
     
     // Plotly templates - targeted replacement
     if (updatedJs.includes('Plotly.newPlot')) {
-      // Replace x arrays with CSV regions
+      // Replace x arrays with actual category column
       updatedJs = updatedJs.replace(
-        /x:\s*\[\d+(?:,\s*\d+)*\]/g,
-        `x: csvData.map(item => item.region)`
+        /x:\s*\[(?:['"](?:[^'"\]]*)['"](?:,\s*)?)+\]/g,
+        `x: csvData.map(item => item['${categoryCol}'])`
       );
-      // Replace y arrays with CSV revenue
       updatedJs = updatedJs.replace(
-        /y:\s*\[\d+(?:,\s*\d+)*\]/g,
-        `y: csvData.map(item => parseFloat(item.revenue))`
+        /x:\s*\[(?:\d+(?:\.\d+)?(?:,\s*)?)+\]/g,
+        `x: csvData.map((item, i) => i)`
+      );
+      // Replace y arrays with actual value column
+      updatedJs = updatedJs.replace(
+        /y:\s*\[(?:\d+(?:\.\d+)?(?:,\s*)?)+\]/g,
+        `y: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
+      );
+    }
+    
+    // Chart.js templates
+    if (updatedJs.includes('Chart(') || updatedJs.includes('new Chart')) {
+      // Replace labels arrays
+      updatedJs = updatedJs.replace(
+        /labels:\s*\[(?:['"](?:[^'"\]]*)['"](?:,\s*)?)+\]/g,
+        `labels: csvData.map(item => item['${categoryCol}'])`
+      );
+      // Replace data arrays in datasets
+      updatedJs = updatedJs.replace(
+        /data:\s*\[(?:\d+(?:\.\d+)?(?:,\s*)?)+\]/g,
+        `data: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
     
@@ -1354,15 +1405,25 @@ function CodeTemplateWorkspace() {
     
     // Remove any existing sampleData or csvData declarations to prevent redeclaration
     let cleanedJs = js
-      .replace(/\/\/ (Sample Data|CSV Data) loaded\n(?:const|let) (sampleData|csvData) = [\s\S]*?;\n\n/g, '');
+      .replace(/\/\/ (Sample Data|CSV Data) loaded\n(?:const|let|var) (sampleData|csvData) = [\s\S]*?;\n\n/g, '');
     
-    // Automatically update templates to use csvData
-    cleanedJs = updateTemplateToUseCSVData(cleanedJs, mappedData);
+    // Get column names from the mapped data
+    const columnNames = mappedData.length > 0 ? Object.keys(mappedData[0]) : [];
+    
+    // Automatically update templates to use csvData with actual column names
+    cleanedJs = updateTemplateToUseCSVData(cleanedJs, mappedData, columnNames);
     
     const newJs = `// CSV Data loaded\nlet csvData = ${dataString};\n\n${cleanedJs}`;
     setJs(newJs);
     
-    toast.success(`CSV data with ${mappedData.length} rows mapped successfully!`);
+    // Show which columns are available for reference
+    const columnInfo = columnNames.length > 0 
+      ? `Columns available: ${columnNames.join(', ')}`
+      : '';
+    
+    toast.success(
+      `CSV data with ${mappedData.length} rows mapped successfully!${columnInfo ? ` ${columnInfo}` : ''}`
+    );
   };
 
   // Create a generic template object for CSV mapper
