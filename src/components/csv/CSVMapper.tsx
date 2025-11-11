@@ -88,6 +88,7 @@ const MappingRow: React.FC<MappingRowProps> = ({
 
   const selectedColumn = csvColumns.find(col => col.name === mapping?.csvColumn);
   const typeCompatible = !selectedColumn || !templateField.type || (
+    templateField.type === selectedColumn.type ||
     (templateField.type === 'quantitative' && selectedColumn.type === 'number') ||
     (templateField.type === 'nominal' && (selectedColumn.type === 'string' || selectedColumn.type === 'boolean')) ||
     (templateField.type === 'temporal' && selectedColumn.type === 'date') ||
