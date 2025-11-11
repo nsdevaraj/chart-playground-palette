@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { CSVParseResult, CSVSchema } from '@/lib/csv';
 import { getColumnStats } from '@/lib/csv/schema';
+import { CSVColumn } from '@/lib/csv/parser';
 
 interface CSVPreviewProps {
   csvParseResult: CSVParseResult;
@@ -58,7 +59,7 @@ const formatCellValue = (value: unknown): string => {
   return String(value);
 };
 
-const ColumnStats: React.FC<{ column: any; data: Record<string, unknown>[] }> = ({ column, data }) => {
+const ColumnStats: React.FC<{ column: CSVColumn; data: Record<string, unknown>[] }> = ({ column, data }) => {
   const stats = getColumnStats(column, data);
   
   return (

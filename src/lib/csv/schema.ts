@@ -62,19 +62,22 @@ const convertValue = (value: unknown, targetType: CSVColumn['type']): unknown =>
   const str = String(value).trim();
   
   switch (targetType) {
-    case 'number':
+    case 'number': {
       const numStr = str.replace(/[,,$]/g, '');
       return isNaN(Number(numStr)) ? null : Number(numStr);
+    }
       
-    case 'boolean':
+    case 'boolean': {
       const lowerStr = str.toLowerCase();
       if (['true', 'yes', '1', 'y'].includes(lowerStr)) return true;
       if (['false', 'no', '0', 'n'].includes(lowerStr)) return false;
       return null;
+    }
       
-    case 'date':
+    case 'date': {
       const date = new Date(str);
       return isNaN(date.getTime()) ? null : date;
+    }
       
     case 'string':
     default:
@@ -157,7 +160,7 @@ export const applySchema = (
  * Generates statistics for a CSV column
  */
 export const getColumnStats = (column: CSVColumn, data: Record<string, unknown>[]) => {
-  const values = data.map(row => row[column.name]).filter(v => v !== null && v !== undefined) as any[];
+  const values = data.map(row => row[column.name]).filter(v => v !== null && v !== undefined) as unknown[];
   
   if (values.length === 0) {
     return {
@@ -179,7 +182,7 @@ export const getColumnStats = (column: CSVColumn, data: Record<string, unknown>[
   let median = null;
   
   if (column.type === 'number') {
-    const numValues = values as number[];
+    const numValues = values.filter((v): v is number => typeof v === 'number');
     numValues.sort((a, b) => a - b);
     min = numValues[0];
     max = numValues[numValues.length - 1];
@@ -188,7 +191,7 @@ export const getColumnStats = (column: CSVColumn, data: Record<string, unknown>[
       ? (numValues[numValues.length / 2 - 1] + numValues[numValues.length / 2]) / 2
       : numValues[Math.floor(numValues.length / 2)];
   } else if (column.type === 'date') {
-    const dateValues = values as Date[];
+    const dateValues = values.filter((v): v is Date => v instanceof Date);
     dateValues.sort((a, b) => a.getTime() - b.getTime());
     min = dateValues[0];
     max = dateValues[dateValues.length - 1];

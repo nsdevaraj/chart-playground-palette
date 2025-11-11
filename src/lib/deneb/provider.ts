@@ -7,6 +7,42 @@
 import { TemplateDataProvider, TemplateField, GenericTemplate } from '../template';
 import { DenebTemplate } from './types';
 
+interface EncodingObject {
+  field?: string;
+  type?: 'quantitative' | 'nominal' | 'temporal' | 'ordinal';
+  [key: string]: unknown;
+}
+
+interface TransformObject {
+  aggregate?: string | string[];
+  field?: string;
+  as?: string | string[];
+  calculate?: string;
+  [key: string]: unknown;
+}
+
+interface VegaLiteSpec {
+  encoding?: Record<string, EncodingObject>;
+  transform?: TransformObject[];
+  [key: string]: unknown;
+}
+
+interface SignalObject {
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface DataObject {
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface VegaSpec {
+  signals?: SignalObject[];
+  data?: DataObject[];
+  [key: string]: unknown;
+}
+
 /**
  * Deneb template field extractor
  */
@@ -44,10 +80,11 @@ export class DenebTemplateProvider implements TemplateDataProvider {
       // Extract from encoding
       if (spec.encoding) {
         Object.entries(spec.encoding).forEach(([channel, encoding]) => {
-          if (typeof encoding === 'object' && encoding !== null && 'field' in encoding) {
-            const field = (encoding as any).field;
+          if (encoding && typeof encoding === 'object' && 'field' in encoding) {
+            const encodingObj = encoding as EncodingObject;
+            const field = encodingObj.field;
             if (field && typeof field === 'string') {
-              const type = (encoding as any).type;
+              const type = encodingObj.type;
               fields.push({
                 name: field,
                 type: type === 'quantitative' ? 'quantitative' : 
@@ -64,11 +101,12 @@ export class DenebTemplateProvider implements TemplateDataProvider {
       // Extract from transforms
       if (spec.transform && Array.isArray(spec.transform)) {
         spec.transform.forEach(transform => {
-          if (typeof transform === 'object' && transform !== null) {
+          if (transform && typeof transform === 'object') {
+            const transformObj = transform as TransformObject;
             // Handle aggregate transforms
-            if ('aggregate' in transform && 'field' in transform) {
+            if (transformObj.aggregate && transformObj.field) {
               fields.push({
-                name: (transform as any).field,
+                name: transformObj.field,
                 type: 'quantitative', // Aggregates are typically numeric
                 required: true,
                 description: 'Field used in aggregate transform'
@@ -76,13 +114,16 @@ export class DenebTemplateProvider implements TemplateDataProvider {
             }
             
             // Handle calculate transforms
-            if ('calculate' in transform && 'as' in transform) {
-              fields.push({
-                name: (transform as any).as,
-                type: 'string', // Calculated fields can be any type
-                required: false,
-                description: 'Calculated field'
-              });
+            if (transformObj.calculate && transformObj.as) {
+              const asField = Array.isArray(transformObj.as) ? transformObj.as[0] : transformObj.as;
+              if (asField) {
+                fields.push({
+                  name: asField,
+                  type: 'string', // Calculated fields can be any type
+                  required: false,
+                  description: 'Calculated field'
+                });
+              }
             }
           }
         });
@@ -96,13 +137,16 @@ export class DenebTemplateProvider implements TemplateDataProvider {
       // Extract from data signals
       if (spec.signals && Array.isArray(spec.signals)) {
         spec.signals.forEach(signal => {
-          if (typeof signal === 'object' && signal !== null && 'name' in signal) {
-            fields.push({
-              name: (signal as any).name,
-              type: 'string',
-              required: false,
-              description: 'Signal data field'
-            });
+          if (signal && typeof signal === 'object' && 'name' in signal) {
+            const signalObj = signal as SignalObject;
+            if (signalObj.name) {
+              fields.push({
+                name: signalObj.name,
+                type: 'string',
+                required: false,
+                description: 'Signal data field'
+              });
+            }
           }
         });
       }
@@ -110,13 +154,16 @@ export class DenebTemplateProvider implements TemplateDataProvider {
       // Extract from data transforms
       if (spec.data && Array.isArray(spec.data)) {
         spec.data.forEach(data => {
-          if (typeof data === 'object' && data !== null && 'name' in data) {
-            fields.push({
-              name: (data as any).name,
-              type: 'string',
-              required: true,
-              description: 'Data source'
-            });
+          if (data && typeof data === 'object' && 'name' in data) {
+            const dataObj = data as DataObject;
+            if (dataObj.name) {
+              fields.push({
+                name: dataObj.name,
+                type: 'string',
+                required: true,
+                description: 'Data source'
+              });
+            }
           }
         });
       }
