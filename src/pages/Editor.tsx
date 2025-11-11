@@ -1238,9 +1238,12 @@ function CodeTemplateWorkspace() {
       
       // Inject the sample data into the JavaScript code
       const dataString = JSON.stringify(initialTemplate.sampleData, null, 2);
-      const newJs = `// Sample Data loaded\nconst sampleData = ${dataString};\n\n${js}`;
-      setJs(newJs);
+       // Remove any existing sampleData or csvData declarations to prevent redeclaration
+      const cleanedJs = js
+        .replace(/\/\/ (Sample Data|CSV Data) loaded\n(?:const|let) (sampleData|csvData) = [\s\S]*?;\n\n/g, '');
       
+      const newJs = `// Sample Data loaded\nlet sampleData = ${dataString};\n\n${cleanedJs}`;
+     
       toast.success(`Sample data with ${initialTemplate.sampleData.length} rows bound to template`);
     } else {
       toast.error("No sample data available for this template");
