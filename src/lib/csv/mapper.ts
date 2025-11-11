@@ -9,6 +9,26 @@ import { DenebTemplate, DenebDataConfig } from '../deneb/types';
 import { CSVParseResult, CSVSchema } from './parser';
 import { suggestFieldMappings, validateAgainstSchema } from './schema';
 
+interface EncodingObject {
+  field?: string;
+  type?: 'quantitative' | 'nominal' | 'temporal' | 'ordinal';
+  [key: string]: unknown;
+}
+
+interface TransformObject {
+  aggregate?: string | string[];
+  field?: string;
+  as?: string | string[];
+  calculate?: string;
+  [key: string]: unknown;
+}
+
+interface VegaLiteSpec {
+  encoding?: Record<string, EncodingObject>;
+  transform?: TransformObject[];
+  [key: string]: unknown;
+}
+
 export interface FieldMapping {
   templateField: string;
   csvColumn: string;
@@ -60,10 +80,11 @@ export const extractTemplateFields = (template: DenebTemplate): { name: string; 
     // Extract from encoding
     if (spec.encoding) {
       Object.entries(spec.encoding).forEach(([channel, encoding]) => {
-        if (typeof encoding === 'object' && encoding !== null && 'field' in encoding) {
-          const field = (encoding as any).field;
+        if (encoding && typeof encoding === 'object' && 'field' in encoding) {
+          const encodingObj = encoding as EncodingObject;
+          const field = encodingObj.field;
           if (field && typeof field === 'string') {
-            const type = (encoding as any).type;
+            const type = encodingObj.type;
             fields.push({
               name: field,
               type: type === 'quantitative' ? 'quantitative' : 
@@ -79,23 +100,27 @@ export const extractTemplateFields = (template: DenebTemplate): { name: string; 
     // Extract from transforms
     if (spec.transform && Array.isArray(spec.transform)) {
       spec.transform.forEach(transform => {
-        if (typeof transform === 'object' && transform !== null) {
+        if (transform && typeof transform === 'object') {
+          const transformObj = transform as TransformObject;
           // Handle aggregate transforms
-          if ('aggregate' in transform && 'field' in transform) {
+          if (transformObj.aggregate && transformObj.field) {
             fields.push({
-              name: (transform as any).field,
+              name: transformObj.field,
               type: 'quantitative', // Aggregates are typically numeric
               required: true
             });
           }
           
           // Handle calculate transforms
-          if ('calculate' in transform && 'as' in transform) {
-            fields.push({
-              name: (transform as any).as,
-              type: 'string', // Calculated fields can be any type
-              required: false
-            });
+          if (transformObj.calculate && transformObj.as) {
+            const asField = Array.isArray(transformObj.as) ? transformObj.as[0] : transformObj.as;
+            if (asField) {
+              fields.push({
+                name: asField,
+                type: 'string', // Calculated fields can be any type
+                required: false
+              });
+            }
           }
         }
       });
