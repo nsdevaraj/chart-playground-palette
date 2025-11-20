@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Loader2,
   Info,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import DenebTemplateViewer from "@/components/deneb/DenebTemplateViewer";
@@ -33,6 +34,7 @@ import { denebTemplateMap, denebTemplates, type DenebTemplateGalleryItem } from 
 import { mermaidTemplateMap, mermaidTemplates, type MermaidTemplateGalleryItem } from "@/data/mermaidTemplates";
 import type { DenebTemplate } from "@/lib/deneb/types";
 import type { MermaidTemplate } from "@/lib/mermaid/types";
+import { exportTemplateAsPlugin } from "@/lib/plugins/utils";
 
 type DenebDataRow = Record<string, unknown>;
 
@@ -1125,7 +1127,7 @@ const Editor = () => {
       />
     );
   }
-  
+
   return <CodeTemplateWorkspace key={templateId ?? "default-code"} />;
 };
 
@@ -1235,15 +1237,15 @@ function CodeTemplateWorkspace() {
   const handleBindSampleData = () => {
     if (initialTemplate.sampleData) {
       setCsvData(initialTemplate.sampleData);
-      
+
       // Inject the sample data into the JavaScript code
       const dataString = JSON.stringify(initialTemplate.sampleData, null, 2);
-       // Remove any existing sampleData or csvData declarations to prevent redeclaration
+      // Remove any existing sampleData or csvData declarations to prevent redeclaration
       const cleanedJs = js
         .replace(/\/\/ (Sample Data|CSV Data) loaded\n(?:const|let) (sampleData|csvData) = [\s\S]*?;\n\n/g, '');
-      
+
       const newJs = `// Sample Data loaded\nlet sampleData = ${dataString};\n\n${cleanedJs}`;
-     
+
       toast.success(`Sample data with ${initialTemplate.sampleData.length} rows bound to template`);
     } else {
       toast.error("No sample data available for this template");
@@ -1282,10 +1284,10 @@ function CodeTemplateWorkspace() {
   // Function to automatically update template JavaScript to use CSV data
   const updateTemplateToUseCSVData = (jsCode: string, csvData: Record<string, unknown>[], columnNames?: string[]) => {
     let updatedJs = jsCode;
-    
+
     // Get actual column names from the CSV data
     const columns = columnNames || (csvData.length > 0 ? Object.keys(csvData[0]) : []);
-    
+
     // Helper function to get the first string-like column for categories
     const getCategoryColumn = () => {
       const column = columns.find(col => {
@@ -1294,7 +1296,7 @@ function CodeTemplateWorkspace() {
       });
       return column || columns[0];
     };
-    
+
     // Helper function to get the first numeric column for values
     const getValueColumn = () => {
       const column = columns.find(col => {
@@ -1303,10 +1305,10 @@ function CodeTemplateWorkspace() {
       });
       return column || columns[0];
     };
-    
+
     const categoryCol = getCategoryColumn();
     const valueCol = getValueColumn();
-    
+
     // Highcharts templates - more targeted replacements
     if (updatedJs.includes('Highcharts.chart')) {
       // Replace hardcoded categories arrays with actual column data
@@ -1320,7 +1322,7 @@ function CodeTemplateWorkspace() {
         `data: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
-    
+
     // ECharts templates - more targeted approach
     if (updatedJs.includes('echarts.init')) {
       // Replace hardcoded string data arrays
@@ -1334,7 +1336,7 @@ function CodeTemplateWorkspace() {
         `data: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
-    
+
     // D3.js templates - direct replacement
     if (updatedJs.includes('d3.select')) {
       // Replace hardcoded data array with CSV data
@@ -1348,7 +1350,7 @@ function CodeTemplateWorkspace() {
         `$1 data = csvData;`
       );
     }
-    
+
     // AG-Grid templates - direct replacement
     if (updatedJs.includes('agGrid.Grid')) {
       updatedJs = updatedJs.replace(
@@ -1360,7 +1362,7 @@ function CodeTemplateWorkspace() {
         `$1 rowData = csvData;`
       );
     }
-    
+
     // Plotly templates - targeted replacement
     if (updatedJs.includes('Plotly.newPlot')) {
       // Replace x arrays with actual category column
@@ -1378,7 +1380,7 @@ function CodeTemplateWorkspace() {
         `y: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
-    
+
     // Chart.js templates
     if (updatedJs.includes('Chart(') || updatedJs.includes('new Chart')) {
       // Replace labels arrays
@@ -1392,35 +1394,35 @@ function CodeTemplateWorkspace() {
         `data: csvData.map(item => parseFloat(String(item['${valueCol}'] || 0)))`
       );
     }
-    
+
     return updatedJs;
   };
 
   const handleCSVDataMapped = (mappedData: Record<string, unknown>[]) => {
     setCsvData(mappedData);
     setShowCSVMapper(false);
-    
+
     // Inject the CSV data into the JavaScript code
     const dataString = JSON.stringify(mappedData, null, 2);
-    
+
     // Remove any existing sampleData or csvData declarations to prevent redeclaration
     let cleanedJs = js
       .replace(/\/\/ (Sample Data|CSV Data) loaded\n(?:const|let|var) (sampleData|csvData) = [\s\S]*?;\n\n/g, '');
-    
+
     // Get column names from the mapped data
     const columnNames = mappedData.length > 0 ? Object.keys(mappedData[0]) : [];
-    
+
     // Automatically update templates to use csvData with actual column names
     cleanedJs = updateTemplateToUseCSVData(cleanedJs, mappedData, columnNames);
-    
+
     const newJs = `// CSV Data loaded\nlet csvData = ${dataString};\n\n${cleanedJs}`;
     setJs(newJs);
-    
+
     // Show which columns are available for reference
-    const columnInfo = columnNames.length > 0 
+    const columnInfo = columnNames.length > 0
       ? `Columns available: ${columnNames.join(', ')}`
       : '';
-    
+
     toast.success(
       `CSV data with ${mappedData.length} rows mapped successfully!${columnInfo ? ` ${columnInfo}` : ''}`
     );
@@ -1596,7 +1598,7 @@ function CodeTemplateWorkspace() {
                   ×
                 </Button>
               </div>
-              
+
               <GenericCSVDataMapper
                 template={currentTemplate}
                 onDataMapped={handleCSVDataMapped}
@@ -1766,6 +1768,10 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
                 <Button size="sm" variant="secondary" onClick={handleValidateTemplate} disabled={loading}>
                   Validate Spec
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => exportTemplateAsPlugin(activeTemplate)} disabled={loading}>
+                  <Package className="w-4 h-4 mr-2" />
+                  Export Plugin
+                </Button>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -1924,7 +1930,7 @@ function DenebTemplateWorkspace({ entry, invalidTemplateId }: DenebTemplateWorks
                   ×
                 </Button>
               </div>
-              
+
               <GenericCSVDataMapper
                 template={activeTemplate}
                 onDataMapped={handleCSVDataMapped}
@@ -1968,7 +1974,7 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
   const handleCSVDataMapped = (data: Record<string, unknown>[]) => {
     setMappedData(data);
     setShowCSVMapper(false);
-    
+
     // For Mermaid templates, we could update the diagram with the mapped data
     // This is a simple implementation that could be enhanced
     toast.success(`CSV data with ${data.length} rows mapped and applied to template`);
@@ -2191,7 +2197,7 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
                 {(() => {
                   const dataRows = mappedData || (Array.isArray(entry.sampleData) ? entry.sampleData : entry.sampleData ? [entry.sampleData] : []);
                   const dataColumns = dataRows.length > 0 ? Object.keys(dataRows[0]) : [];
-                  
+
                   return dataRows.length > 0 ? (
                     <>
                       <Table>
@@ -2274,7 +2280,7 @@ function MermaidTemplateWorkspace({ entry, invalidTemplateId }: MermaidTemplateW
                   ×
                 </Button>
               </div>
-              
+
               <GenericCSVDataMapper
                 template={template}
                 onDataMapped={handleCSVDataMapped}

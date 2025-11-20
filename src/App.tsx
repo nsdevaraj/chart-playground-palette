@@ -7,6 +7,7 @@ import Layout from "./components/layout/Layout";
 import Gallery from "./pages/Gallery";
 import Editor from "./pages/Editor";
 import CSVWorkflow from "./pages/CSVWorkflow";
+import Plugins from "./pages/Plugins";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,10 +19,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Layout>
-          <Routes> 
+          <Routes>
             <Route path="/" element={<Gallery />} />
             <Route path="/editor" element={<Editor />} />
             <Route path="/csv-workflow" element={<CSVWorkflow />} />
+            <Route path="/plugins" element={<Plugins />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

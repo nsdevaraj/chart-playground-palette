@@ -14,106 +14,106 @@ import { getVegaLiteSpec } from './loader';
  * Helper function to inject data into a spec (handles both Vega and Vega-Lite)
  */
 const injectDataIntoSpec = (
-  spec: VegaLiteSpec | VegaSpec,
-  data?: Record<string, unknown>[] | unknown
+    spec: VegaLiteSpec | VegaSpec,
+    data?: Record<string, unknown>[] | unknown
 ): VegaLiteSpec | VegaSpec => {
-  if (!data) {
-    return spec;
-  }
-
-  const dataValues = Array.isArray(data) ? data : [data];
-
-  // Check if this is a Vega spec (has data as array) or Vega-Lite (has data as object)
-  const isVegaSpec = spec.$schema?.includes('vega/v5') || 
-                     (Array.isArray(spec.data) && spec.data.length > 0 && typeof spec.data[0] === 'object' && 'name' in spec.data[0]);
-
-  if (isVegaSpec && Array.isArray(spec.data) && spec.data.length > 0) {
-    // For Vega specs: inject data into appropriate data sources
-    const dataArray = spec.data.map((dataSource: unknown, index: number) => {
-      if (typeof dataSource === 'object' && dataSource !== null && 'name' in dataSource) {
-        const ds = dataSource as Record<string, unknown>;
-        
-        // Inject if data source has a URL (external data) and no values yet
-        // Also inject into first source or specifically named sources if they don't have values
-        const hasUrl = !!ds.url;
-        const isNamedDataSource = ds.name === 'table' || ds.name === 'dataset';
-        const isFirstSource = index === 0;
-        
-        const shouldInject = !ds.values && (hasUrl || isNamedDataSource || isFirstSource);
-        
-        if (shouldInject) {
-          // Remove URL if present and add values, but keep other properties like format, transform
-          const { url, ...restProps } = ds;
-          return {
-            ...restProps,
-            values: dataValues,
-          };
-        }
-      }
-      return dataSource;
-    });
-    
-    return {
-      ...spec,
-      data: dataArray,
-    } as VegaLiteSpec | VegaSpec;
-  } else {
-    // For Vega-Lite specs: only replace if no URL is specified
-    if (typeof spec.data === 'object' && spec.data !== null && 'url' in spec.data) {
-      // Don't inject if spec already has a URL
-      return spec;
+    if (!data) {
+        return spec;
     }
-    
-    return {
-      ...spec,
-      data: {
-        values: dataValues,
-      },
-    } as VegaLiteSpec | VegaSpec;
-  }
+
+    const dataValues = Array.isArray(data) ? data : [data];
+
+    // Check if this is a Vega spec (has data as array) or Vega-Lite (has data as object)
+    const isVegaSpec = spec.$schema?.includes('vega/v5') ||
+        (Array.isArray(spec.data) && spec.data.length > 0 && typeof spec.data[0] === 'object' && 'name' in spec.data[0]);
+
+    if (isVegaSpec && Array.isArray(spec.data) && spec.data.length > 0) {
+        // For Vega specs: inject data into appropriate data sources
+        const dataArray = spec.data.map((dataSource: unknown, index: number) => {
+            if (typeof dataSource === 'object' && dataSource !== null && 'name' in dataSource) {
+                const ds = dataSource as Record<string, unknown>;
+
+                // Inject if data source has a URL (external data) and no values yet
+                // Also inject into first source or specifically named sources if they don't have values
+                const hasUrl = !!ds.url;
+                const isNamedDataSource = ds.name === 'table' || ds.name === 'dataset';
+                const isFirstSource = index === 0;
+
+                const shouldInject = !ds.values && (hasUrl || isNamedDataSource || isFirstSource);
+
+                if (shouldInject) {
+                    // Remove URL if present and add values, but keep other properties like format, transform
+                    const { url, ...restProps } = ds;
+                    return {
+                        ...restProps,
+                        values: dataValues,
+                    };
+                }
+            }
+            return dataSource;
+        });
+
+        return {
+            ...spec,
+            data: dataArray,
+        } as VegaLiteSpec | VegaSpec;
+    } else {
+        // For Vega-Lite specs: only replace if no URL is specified
+        if (typeof spec.data === 'object' && spec.data !== null && 'url' in spec.data) {
+            // Don't inject if spec already has a URL
+            return spec;
+        }
+
+        return {
+            ...spec,
+            data: {
+                values: dataValues,
+            },
+        } as VegaLiteSpec | VegaSpec;
+    }
 };
 
 /**
  * Generates HTML for rendering a Deneb template with Vega-Lite
  */
 export const generateHTMLFromTemplate = (
-  template: DenebTemplate,
-  options?: {
-    containerId?: string;
-    width?: number | string;
-    height?: number | string;
-    theme?: string;
-    actions?: boolean;
-  }
+    template: DenebTemplate,
+    options?: {
+        containerId?: string;
+        width?: number | string;
+        height?: number | string;
+        theme?: string;
+        actions?: boolean;
+    }
 ): string => {
-  const vegaSpec = getVegaLiteSpec(template);
-  if (!vegaSpec) {
-    return '<div>Error: Invalid template specification</div>';
-  }
+    const vegaSpec = getVegaLiteSpec(template);
+    if (!vegaSpec) {
+        return '<div>Error: Invalid template specification</div>';
+    }
 
-  const containerId = options?.containerId || 'vega-container';
-  const width = options?.width || 'auto';
-  const height = options?.height || 400;
-  const theme = options?.theme || 'default';
-  const showActions = options?.actions !== false;
+    const containerId = options?.containerId || 'vega-container';
+    const width = options?.width || 'auto';
+    const height = options?.height || 400;
+    const theme = options?.theme || 'default';
+    const showActions = options?.actions !== false;
 
-  // Create Vega or Vega-Lite spec with default settings
-  const enhancedSpec: VegaLiteSpec | VegaSpec = {
-    ...vegaSpec,
-    width: vegaSpec.width || 600,
-    height: vegaSpec.height || 400,
-    config: {
-      ...vegaSpec.config,
-      theme,
-      mark: {
-        ...(vegaSpec.config?.mark as Record<string, unknown>),
-      },
-    },
-  };
+    // Create Vega or Vega-Lite spec with default settings
+    const enhancedSpec: VegaLiteSpec | VegaSpec = {
+        ...vegaSpec,
+        width: vegaSpec.width || 600,
+        height: vegaSpec.height || 400,
+        config: {
+            ...vegaSpec.config,
+            theme,
+            mark: {
+                ...(vegaSpec.config?.mark as Record<string, unknown>),
+            },
+        },
+    };
 
-  const specJson = JSON.stringify(enhancedSpec);
+    const specJson = JSON.stringify(enhancedSpec);
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -160,7 +160,7 @@ export const generateHTMLFromTemplate = (
 <body>
     <div id="${containerId}"></div>
     <script type="text/javascript">
-        const spec = ${specJson};
+        var spec = ${specJson};
         const options = {
             actions: ${showActions ? 'true' : 'false'},
             responsive: true
@@ -180,19 +180,19 @@ export const generateHTMLFromTemplate = (
  * Generates HTML specifically designed for iframe embedding
  */
 export const generateIFrameHTML = (
-  template: DenebTemplate,
-  data?: Record<string, unknown>[] | unknown
+    template: DenebTemplate,
+    data?: Record<string, unknown>[] | unknown
 ): string => {
-  const vegaSpec = getVegaLiteSpec(template);
-  if (!vegaSpec) {
-    return '<div style="color: red; padding: 20px;">Error: Invalid template</div>';
-  }
+    const vegaSpec = getVegaLiteSpec(template);
+    if (!vegaSpec) {
+        return '<div style="color: red; padding: 20px;">Error: Invalid template</div>';
+    }
 
-  // Merge data if provided
-  const finalSpec = injectDataIntoSpec(vegaSpec, data);
-  const specJson = JSON.stringify(finalSpec);
+    // Merge data if provided
+    const finalSpec = injectDataIntoSpec(vegaSpec, data);
+    const specJson = JSON.stringify(finalSpec);
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html>
 <head>
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
@@ -213,7 +213,7 @@ export const generateIFrameHTML = (
 <body>
     <div id="vis"></div>
     <script type="text/javascript">
-        const spec = ${specJson};
+        var spec = ${specJson};
         vegaEmbed('#vis', spec, { responsive: true, actions: false }).catch(error => {
             console.error(error);
             document.body.innerHTML = '<div style="color: red; padding: 10px;">Error rendering visualization</div>';
@@ -227,18 +227,18 @@ export const generateIFrameHTML = (
  * Creates a preview HTML with template information and visualization
  */
 export const createTemplatePreviewHTML = (
-  template: DenebTemplate,
-  data?: Record<string, unknown>[] | unknown
+    template: DenebTemplate,
+    data?: Record<string, unknown>[] | unknown
 ): string => {
-  const vegaSpec = getVegaLiteSpec(template);
-  if (!vegaSpec) {
-    return '<div>Error: Invalid template</div>';
-  }
+    const vegaSpec = getVegaLiteSpec(template);
+    if (!vegaSpec) {
+        return '<div>Error: Invalid template</div>';
+    }
 
-  const finalSpec = injectDataIntoSpec(vegaSpec, data);
-  const specJson = JSON.stringify(finalSpec);
+    const finalSpec = injectDataIntoSpec(vegaSpec, data);
+    const specJson = JSON.stringify(finalSpec);
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -351,7 +351,7 @@ export const createTemplatePreviewHTML = (
     </div>
     
     <script type="text/javascript">
-        const spec = ${specJson};
+        var spec = ${specJson};
         vegaEmbed('#vis', spec, {
             responsive: true,
             actions: {
@@ -373,19 +373,19 @@ export const createTemplatePreviewHTML = (
  * Creates a complete template viewer with data binding controls
  */
 export const createTemplateViewer = (
-  template: DenebTemplate,
-  data?: Record<string, unknown>[] | unknown
+    template: DenebTemplate,
+    data?: Record<string, unknown>[] | unknown
 ): string => {
-  const vegaSpec = getVegaLiteSpec(template);
-  if (!vegaSpec) {
-    return '<div>Error: Invalid template</div>';
-  }
+    const vegaSpec = getVegaLiteSpec(template);
+    if (!vegaSpec) {
+        return '<div>Error: Invalid template</div>';
+    }
 
-  const finalSpec = injectDataIntoSpec(vegaSpec, data);
-  const specJson = JSON.stringify(finalSpec);
-  const templateJson = JSON.stringify(template);
+    const finalSpec = injectDataIntoSpec(vegaSpec, data);
+    const specJson = JSON.stringify(finalSpec);
+    const templateJson = JSON.stringify(template);
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -506,7 +506,7 @@ export const createTemplateViewer = (
     </div>
     
     <script type="text/javascript">
-        const spec = ${specJson};
+        var spec = ${specJson};
         vegaEmbed('#vis', spec, {
             responsive: true,
             actions: {
@@ -527,12 +527,12 @@ export const createTemplateViewer = (
  * Utility function to escape HTML entities
  */
 const escapeHtml = (text: string): string => {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, (char) => map[char]);
+    const map: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+    };
+    return text.replace(/[&<>"']/g, (char) => map[char]);
 };

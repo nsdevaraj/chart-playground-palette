@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Upload, 
-  ArrowRight, 
-  ArrowLeft, 
+import {
+  Upload,
+  ArrowRight,
+  ArrowLeft,
   FileSpreadsheet,
   BarChart3,
   CheckCircle,
@@ -92,24 +92,61 @@ const providers: Provider[] = [
   }
 ];
 
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
+
+// ... (imports)
+
 const CSVWorkflow = () => {
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   const [csvContent, setCsvContent] = useState('');
   const [parseResult, setParseResult] = useState<CSVParseResult | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [customTemplate, setCustomTemplate] = useState<DenebTemplate | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
+  // Handle template passed from Plugins page
+  useEffect(() => {
+    if (location.state?.template) {
+      const template = location.state.template as DenebTemplate;
+      setCustomTemplate(template);
+      setSelectedProvider('deneb'); // Assuming plugins are Deneb for now
+      setSelectedTemplate(template.name); // Use name as ID for custom templates
+
+      // If we have a template but no data, start at upload
+      // If we had data (future enhancement), we could jump to mapping
+      setCurrentStep('upload');
+      toast.success(`Using template: ${template.name}`);
+    }
+  }, [location.state]);
+
   const currentProvider = providers.find(p => p.id === selectedProvider);
-  const currentTemplate = currentProvider?.templates.find(t => t.id === selectedTemplate);
+  // Logic to find template: either from static list or use custom one
+  const currentTemplate = customTemplate
+    ? {
+      id: customTemplate.name,
+      title: customTemplate.name,
+      description: customTemplate.description || '',
+      category: 'Custom',
+      tags: customTemplate.metadata?.tags || [],
+      template: customTemplate
+    } as DenebTemplateGalleryItem
+    : currentProvider?.templates.find(t => t.id === selectedTemplate);
 
   const handleCSVLoaded = (content: string, result: CSVParseResult) => {
     setCsvContent(content);
     setParseResult(result);
     setErrors([]);
-    
+
     if (result.errors.length === 0) {
-      setCurrentStep('select-provider');
+      if (customTemplate) {
+        // If we already have a custom template, skip provider/template selection
+        setCurrentStep('mapping');
+      } else {
+        setCurrentStep('select-provider');
+      }
       toast.success(`CSV loaded successfully! ${result.rowCount} rows found.`);
     } else {
       setErrors(result.errors);
@@ -166,7 +203,7 @@ const CSVWorkflow = () => {
 
   const getEditorUrl = () => {
     if (!currentTemplate) return '#';
-    
+
     if (selectedProvider === 'deneb') {
       return `/editor?type=deneb&id=${selectedTemplate}`;
     } else if (selectedProvider === 'mermaid') {
@@ -227,11 +264,10 @@ const CSVWorkflow = () => {
                   return (
                     <Card
                       key={provider.id}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedProvider === provider.id
-                          ? 'ring-2 ring-primary'
-                          : ''
-                      }`}
+                      className={`cursor-pointer transition-all hover:shadow-md ${selectedProvider === provider.id
+                        ? 'ring-2 ring-primary'
+                        : ''
+                        }`}
                       onClick={() => handleProviderSelect(provider.id)}
                     >
                       <CardHeader>
@@ -279,11 +315,10 @@ const CSVWorkflow = () => {
                   {currentProvider?.templates.map((template) => (
                     <Card
                       key={template.id}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedTemplate === template.id
-                          ? 'ring-2 ring-primary'
-                          : ''
-                      }`}
+                      className={`cursor-pointer transition-all hover:shadow-md ${selectedTemplate === template.id
+                        ? 'ring-2 ring-primary'
+                        : ''
+                        }`}
                       onClick={() => handleTemplateSelect(template.id)}
                     >
                       <CardHeader className="pb-3">
@@ -320,42 +355,42 @@ const CSVWorkflow = () => {
         );
 
       case 'mapping':
-         return currentTemplate && parseResult && selectedProvider === 'deneb' ? (
-           <CSVDataMapper
-             template={currentTemplate.template as DenebTemplate}
-             onDataMapped={handleMappingComplete}
-             onError={(error) => toast.error(error)}
-             initialCSVContent={csvContent}
-             initialParseResult={parseResult}
-           />
-         ) : currentTemplate ? (
-           <Card>
-             <CardHeader>
-               <CardTitle>{currentTemplate.title} Template Selected</CardTitle>
-               <CardDescription>
-                 Your {currentProvider?.name} template is ready. You can proceed to configure and customize it in the editor.
-               </CardDescription>
-             </CardHeader>
-             <CardContent>
-               <div className="space-y-4">
-                 <div className="p-4 bg-muted rounded-lg">
-                   <h4 className="font-medium mb-2">Template: {currentTemplate.title}</h4>
-                   <p className="text-sm text-muted-foreground mb-2">{currentTemplate.description}</p>
-                   <div className="flex flex-wrap gap-1">
-                     {currentTemplate.tags.map((tag) => (
-                       <Badge key={tag} variant="secondary" className="text-xs">
-                         {tag}
-                       </Badge>
-                     ))}
-                   </div>
-                 </div>
-                 <Button onClick={() => handleMappingComplete([])} className="w-full">
-                   Continue to Editor
-                 </Button>
-               </div>
-             </CardContent>
-           </Card>
-         ) : null;
+        return currentTemplate && parseResult && selectedProvider === 'deneb' ? (
+          <CSVDataMapper
+            template={currentTemplate.template as DenebTemplate}
+            onDataMapped={handleMappingComplete}
+            onError={(error) => toast.error(error)}
+            initialCSVContent={csvContent}
+            initialParseResult={parseResult}
+          />
+        ) : currentTemplate ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{currentTemplate.title} Template Selected</CardTitle>
+              <CardDescription>
+                Your {currentProvider?.name} template is ready. You can proceed to configure and customize it in the editor.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Template: {currentTemplate.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{currentTemplate.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {currentTemplate.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <Button onClick={() => handleMappingComplete([])} className="w-full">
+                  Continue to Editor
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null;
 
       case 'preview':
         return (
@@ -393,7 +428,7 @@ const CSVWorkflow = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-center pt-4">
                 <Link to={getEditorUrl()}>
                   <Button size="lg" className="glow-primary">
@@ -452,21 +487,19 @@ const CSVWorkflow = () => {
                 {[1, 2, 3, 4, 5].map((step) => (
                   <div key={step} className="flex items-center">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        step === getStepNumber()
-                          ? 'bg-primary text-primary-foreground'
-                          : step < getStepNumber()
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === getStepNumber()
+                        ? 'bg-primary text-primary-foreground'
+                        : step < getStepNumber()
                           ? 'bg-green-500 text-white'
                           : 'bg-muted text-muted-foreground'
-                      }`}
+                        }`}
                     >
                       {step < getStepNumber() ? '✓' : step}
                     </div>
                     {step < 5 && (
                       <div
-                        className={`w-8 h-0.5 mx-2 ${
-                          step < getStepNumber() ? 'bg-green-500' : 'bg-muted'
-                        }`}
+                        className={`w-8 h-0.5 mx-2 ${step < getStepNumber() ? 'bg-green-500' : 'bg-muted'
+                          }`}
                       />
                     )}
                   </div>

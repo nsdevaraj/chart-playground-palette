@@ -10,13 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Copy, AlertCircle } from 'lucide-react';
+import { Download, Copy, AlertCircle, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { DenebTemplate } from '@/lib/deneb/types';
 import {
   generateIFrameHTML,
   createTemplatePreviewHTML,
 } from '@/lib/deneb/renderer';
+import { exportTemplateAsPlugin } from '@/lib/plugins/utils';
 
 interface DenebTemplateViewerProps {
   template: DenebTemplate;
@@ -105,6 +106,14 @@ export const DenebTemplateViewer: React.FC<DenebTemplateViewerProps> = ({
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportTemplateAsPlugin(template)}
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Export Plugin
                 </Button>
               </div>
             </CardHeader>
